@@ -1,7 +1,7 @@
 # Wordle Solver
 Wordle Solver is a terminal based program that assists solving the Wordle game on https://www.nytimes.com/games/wordle/index.html .
-  The program works by filtering words from your input conditions. 
-  The program is coded in Julia so Julia.exe is needed to run file.
+- The program works by filtering words from your input conditions. 
+- The program is coded in Julia so Julia.exe is needed to run file.
 
 
 ## Introduction
@@ -12,8 +12,8 @@ Wordle is a game where you have to guess a 5-letter word. You have 6 tries and y
 ## Installation and Set-up
 
 1. Download the Julia programming language from https://julialang.org/downloads/ .
-  2. Clone this Git or download/copy the program 'main.jl' along with 'words.txt'.
-  3. Using your computer Terminal/Command Prompt, go into the programme's file path and run:
+2. Clone this Git or download/copy the program 'main.jl' along with 'words.txt'.
+3. Using your computer Terminal/Command Prompt, go into the programme's file path and run:
 
 ```
 julia main.jl
@@ -22,13 +22,13 @@ julia main.jl
 
 ## Program Guide
 
-First type in 1 to 2 words into the Wordle page on https://www.nytimes.com/games/wordle/index.html .
+- First, type in 1 to 2 words into the Wordle page on https://www.nytimes.com/games/wordle/index.html .
   Example: 
 ![image](https://user-images.githubusercontent.com/90701608/212551008-38d7278e-f04d-4720-9355-5d118fe26fe6.png)
 
-Gray letters: The actual word does not contain gray letters
-  Yellow letters: The actual word contains the yellow letter but not at that position
-  Green letters: The actual word contains the green letter at that exact position
+- Gray letters: The actual word does not contain any gray letters.
+- Yellow letters: The actual word contains the yellow letter but not at that character position.
+- Green letters: The actual word contains the green letter at that exact position.
 
 ### There are 2 main types of input for Wordle Solver
 #### 1. General conditions - what letters are in the actual word or not (ignoring their position)
@@ -41,10 +41,9 @@ ie
 ```
 ie/abdcough
 ```
-letters before the dash '/' represent letters that the actual word contain (ie. for green and yellow letters)
-  letters after the dash '/' represent letters that the actual word does not contain
-
-  You can type these conditions in any order.
+- letters before the dash '/' represent letters that the actual word contain (ie. for green and yellow letters)
+- letters after the dash '/' represent letters that the actual word does not contain
+- *You can type these conditions in any order.
 
 
 #### 2. Specific conditions
@@ -54,10 +53,10 @@ For the above example, type:
 5ye
 ```
 
-```3yi```: '3' represents the position of the letter; 'y' means yes/is; 'i' represents the letter
-- so this means the '3'rd character of the actual word is 'i'
-- similarly, you can type ```3ni``` representing the '3'rd character of the actual word is not 'i' ('n' represents no/not)
-- you can also type multiple letters after 'n': ```2nenp``` represents '2'nd character is not 'e', 'n', or 'p'
+- ```3yi```: '3' represents the position of the letter; 'y' means yes/is; 'i' represents the letter
+- So this means the '3'rd character of the actual word is 'i'
+- Similarly, you can type ```3ni``` representing the '3'rd character of the actual word is not 'i' ('n' represents no/not)
+- You can also type multiple letters after 'n': ```2nenp``` represents '2'nd character is not 'e', 'n', or 'p'
 
 
 #### 3. Special commands
@@ -68,7 +67,7 @@ For the above example, type:
 
 ## Features
 
-Wordle Solver is a prettified program and outputs nicely, it also outputs dynamically based on the size of your Terminal window:
+- Wordle Solver is a prettified program and outputs nicely, it also outputs dynamically based on the size of your Terminal window:
 
 ![image](https://user-images.githubusercontent.com/90701608/212552953-dc9cca69-bade-4245-afac-19c6e100de00.png)
 
@@ -76,7 +75,7 @@ Wordle Solver is a prettified program and outputs nicely, it also outputs dynami
 
 ![image](https://user-images.githubusercontent.com/90701608/212554602-f1ed3752-19ca-4e48-934b-d69b4b1ca056.png)
 
-Wordle Solver will check for invalid inputs:
+- Wordle Solver will check for invalid inputs:
 
 ![image](https://user-images.githubusercontent.com/90701608/212554548-1ec27c93-e9dd-498a-b29e-d530a6bbccad.png)
 
