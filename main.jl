@@ -94,7 +94,7 @@ function updatePossibleSpecific(pos::Int8, type::Bool, letters::Vector{Char})
     else
         possible = filter(word -> !(word[pos] in letters), possible)
     end
-    checkEndProgram
+    checkEndProgram()
 end
 
 # Function for filtering the list of words with general conditions
