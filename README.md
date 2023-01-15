@@ -30,7 +30,7 @@ julia main.jl
 - Yellow letters: The actual word contains the yellow letter but not at that character position.
 - Green letters: The actual word contains the green letter at that exact position.
 
-### There are 2 main types of input for Wordle Solver
+### There are 4 Types of input for Wordle Solver
 #### 1. General conditions - what letters are in the actual word or not (ignoring their position)
 For the above example, type:
 ```
@@ -59,10 +59,16 @@ For the above example, type:
 - You can also type multiple letters after 'n': ```2nenp``` represents '2'nd character is not 'e', 'n', or 'p'
 
 
-#### 3. Special commands
+#### 3. Repeating conditions
+- If you know that the word has repeated letters, for example there are 2 'e's in the word, type ```er2``` meaning 'e' repeats 2 times
+- 
+
+
+#### 4. Special commands/inputs
 - input ```1v``` to view/print out a list of the filtered words
 - input ```1av``` to turn ON Auto-View (which automatically prints out the list of filtered words every time you input something)
 - input ```1avoff``` to turn OFF Auto-View
+- input ```exit``` to End program
 
 
 ## Features
@@ -82,6 +88,6 @@ For the above example, type:
 
 ## Afterword
 
-Wordle Solver is a mini-project developed in a weekend. There are limitations such as no function to for words with repeating characters etc. More functions will be added soon to improve program and user experience. Finally, this is open-sourced and you can use/copy this for your own uses.
+Wordle Solver is a mini-project developed in a weekend. There are still limitations. More functions will be added soon to improve program and user experience. Finally, this is open-sourced and you can use/copy this for your own uses.
 
 
