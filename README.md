@@ -68,7 +68,8 @@ For the above example, type:
 - input ```1v``` to view/print out a list of the filtered words
 - input ```1av``` to turn ON Auto-View (which automatically prints out the list of filtered words every time you input something)
 - input ```1avoff``` to turn OFF Auto-View
-- input ```exit``` to End program
+- input ```1r``` or ```reset``` to Reset program
+- input ```1e``` or ```exit``` to End program (Program ends automatically when the Wordle has been solved)
 
 
 ## Features

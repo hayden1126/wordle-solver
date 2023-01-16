@@ -6,21 +6,8 @@ possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
 correctLetters = Set{Char}()
 wrongLetters = Set{Char}()
 autoView = false
-inputHistory = String[]
-# wordle = Dict()
 
-
-# Functions to add:
-# input inputHistory X
-# lock inputs for specific 1ya 1na in wordle Dict X
-# Undo when filtered length is 0
-
-# To add to md:
-# exit to end
-# repeating condition ar2 means 'a' repeating 2 times
-
-
-# Main Function
+"""Main Function"""
 function main()
     global correctLetters, wrongLetters, autoView
     while true
@@ -53,13 +40,13 @@ function main()
         # Filter for Specific conditions
         elseif isnumeric(input[1]) && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             if isequal(input[2], 'y')
-                if !check_contradict(string(input[2]), "")
+                if check_contradict(string(input[2]), "")
                     continue
                 end
                 updatepossible_specific(parse(Int8, input[1]), true, collect(input[3:end]))
                 union!(correctLetters, input[3])
             else
-                if !check_contradict("", string(input[1]))
+                if check_contradict("", string(input[1]))
                     continue
                 end
                 updatepossible_specific(parse(Int8, input[1]), false, collect(input[3:end]))
@@ -67,7 +54,7 @@ function main()
         
         # Filter for repeating letters
         elseif isletter(input[1]) && isequal(length(input), 3) && isequal(input[2], 'r') && isnumeric(input[3])
-            if !check_contradict(string(input[1]), "")
+            if check_contradict(string(input[1]), "")
                 continue
             end
             updatepossible_repeating(input[1], parse(Int8, input[3]))
@@ -85,21 +72,21 @@ function main()
     end
 end
 
-# Function for checking if input letters contradict previous inputs
+"""Function for checking if 'correct' and 'wrong' contradict previous inputs in 'correctLetters' and 'wrongLetters (return true if contradicts, false otherwise)"""
 function check_contradict(correct::String, wrong::String = "")::Bool
     global correctLetters, wrongLetters
     if length(intersect(correctLetters, wrong)) > 0 || length(intersect(wrongLetters, correct)) > 0
         println(BOLD, RED_FG, "Input contradicts previous input, try again.")
-        return false
+        return true
     end   
-    return true
+    return false
 end
 
-# Function for checking special inputs (commands)
+"""Function for checking special inputs/commands (return true if input is a command, false otherwise)"""
 function check_commands(input::String)::Bool
-    global autoView
-    if input == "exit"
-        println(BOLD, LIGHT_BLUE_BG, "Program ended. \n")
+    global autoView, possible
+    if input == "1e" || input == "exit"
+        println(BOLD, LIGHT_BLUE_FG, "Program ended. \n")
         exit()
     elseif input == "1v"
         view_possible()
@@ -107,13 +94,17 @@ function check_commands(input::String)::Bool
         autoView = true
     elseif input == "1avoff"
         autoView = false
+    elseif input == "1r" || input == "reset"
+        autoView = false
+        possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
+        println(BOLD, MAGENTA_FG, "Program reset.")
     else
         return false
     end     
     return true
 end
 
-# Function for checking validity of input
+"""Function for checking validity of input (return true if passes check, false otherwise)"""
 function check_input(input1::String, input2::String = "")::Bool
     # Check for empty inputs
     if isempty(input1) && isempty(input2)
@@ -127,12 +118,12 @@ function check_input(input1::String, input2::String = "")::Bool
         end
         
         # Check if any letters contradict previous inputs
-        return check_contradict(input1, input2)
+        return !check_contradict(input1, input2)
     end
     return true 
 end
 
-# Function for filtering the list of words with specific conditions
+"""Function for filtering the list of words with specific conditions"""
 function updatepossible_specific(pos::Int8, type::Bool, letters::Vector{Char})
     global possible
     if type
@@ -143,21 +134,21 @@ function updatepossible_specific(pos::Int8, type::Bool, letters::Vector{Char})
     check_endprogram()
 end
 
-# Function for filtering the list of words with general conditions
+"""Function for filtering the list of words with general conditions"""
 function updatepossible_generic(correct::String = "", wrong::String = "")
     global possible
     filter!(word -> all(letter->(letter in word), correct) && !any(letter->(letter in word), wrong), possible)
     check_endprogram()
 end
 
-# Function for filtering the list of words with repeating letters
+"""Function for filtering the list of words with repeating letters"""
 function updatepossible_repeating(letter::Char, times::Int8)
     global possible
     filter!(word -> count(==(letter), word) >= times, possible)
     check_endprogram()
 end
 
-# Function for outputing the Filtered list 
+"""Function for outputing the Filtered list"""
 function view_possible()
     global possible
     len = length(possible)
@@ -186,7 +177,7 @@ function view_possible()
     end
 end
 
-# Function for checking whether the program should end or not
+"""Function for checking whether the program should end or not"""
 function check_endprogram()
     global possible
     if isequal(length(possible), 1)
