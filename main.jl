@@ -46,9 +46,6 @@ function main()
                 updatepossible_specific(parse(Int8, input[1]), true, collect(input[3:end]))
                 union!(correctLetters, input[3])
             else
-                if check_contradict("", string(input[1]))
-                    continue
-                end
                 updatepossible_specific(parse(Int8, input[1]), false, collect(input[3:end]))
             end
         
@@ -185,7 +182,7 @@ function check_endprogram()
         println(BOLD, LIGHT_BLUE_FG, "Program ended. 😄 \n")
         exit()
     elseif isequal(length(possible), 0)
-        println(BOLD, RED_FG, "No possible words. Program ended. \n")
+        println(BOLD, MAGENTA_FG, "No possible words. Program ended. \n")
         exit()
     end
 end
