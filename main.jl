@@ -1,6 +1,9 @@
 using DelimitedFiles
 using Crayons.Box
 
+PATHINDEX = findall(l -> l == '/', Base.source_path())[end] - 1
+println("Entering Path: $(Base.source_path()[1:PATHINDEX])")
+cd(Base.source_path()[1:PATHINDEX])
 # Initialize global variables
 possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
 correctLetters = Set{Char}()
@@ -16,10 +19,9 @@ function main()
         input = lowercase(strip(readline()))
         
         # Check if input is command or invalid
-        if check_commands(input) || !check_input(input)
+        if check_commands(input) || !check_input(input, "", false)
             continue
         end
-
         # Filter for general conditions
         if all(isletter, replace(input, "/" => ""))
             inputSplit = split(input, '/')
@@ -40,7 +42,7 @@ function main()
         # Filter for Specific conditions
         elseif isnumeric(input[1]) && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             if isequal(input[2], 'y')
-                if check_contradict(string(input[2]), "")
+                if check_contradict(string(input[3:end]), "")
                     continue
                 end
                 updatepossible_specific(parse(Int8, input[1]), true, collect(input[3:end]))
@@ -83,7 +85,7 @@ end
 function check_commands(input::String)::Bool
     global autoView, possible
     if input == "1e" || input == "exit"
-        println(BOLD, LIGHT_BLUE_FG, "Program ended. \n")
+        println(BOLD, MAGENTA_FG, "Program ended. \n")
         exit()
     elseif input == "1v"
         view_possible()
@@ -102,7 +104,7 @@ function check_commands(input::String)::Bool
 end
 
 """Function for checking validity of input (return true if passes check, false otherwise)"""
-function check_input(input1::String, input2::String = "")::Bool
+function check_input(input1::String, input2::String, mode::Bool = true)::Bool
     # Check for empty inputs
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
@@ -115,7 +117,9 @@ function check_input(input1::String, input2::String = "")::Bool
         end
         
         # Check if any letters contradict previous inputs
-        return !check_contradict(input1, input2)
+        if mode
+            return !check_contradict(input1, input2)
+        end
     end
     return true 
 end
@@ -179,10 +183,10 @@ function check_endprogram()
     global possible
     if isequal(length(possible), 1)
         view_possible()
-        println(BOLD, LIGHT_BLUE_FG, "Program ended. 😄 \n")
+        println(BOLD, MAGENTA_FG, "Program ended. 😄 \n")
         exit()
     elseif isequal(length(possible), 0)
-        println(BOLD, MAGENTA_FG, "No possible words. Program ended. \n")
+        println(BOLD, RED_FG, "No possible words. Program ended. \n")
         exit()
     end
 end
