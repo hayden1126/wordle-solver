@@ -1,9 +1,11 @@
 using DelimitedFiles
 using Crayons.Box
 
+# Change to correct directory
 PATHINDEX = findall(l -> l == '/', Base.source_path())[end] - 1
 println("Entering Path: $(Base.source_path()[1:PATHINDEX])")
 cd(Base.source_path()[1:PATHINDEX])
+
 # Initialize global variables
 possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
 correctLetters = Set{Char}()
@@ -83,7 +85,7 @@ end
 
 """Function for checking special inputs/commands (return true if input is a command, false otherwise)"""
 function check_commands(input::String)::Bool
-    global autoView, possible
+    global autoView, possible, correctLetters, wrongLetters
     if input == "1e" || input == "exit"
         println(BOLD, MAGENTA_FG, "Program ended. \n")
         exit()
@@ -97,6 +99,9 @@ function check_commands(input::String)::Bool
         autoView = false
         possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
         println(BOLD, MAGENTA_FG, "Program reset.")
+    elseif input == "1i"
+        println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(correctLetters)), ' '))
+        println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(wrongLetters)), ' '))
     else
         return false
     end     
