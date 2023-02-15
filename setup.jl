@@ -1,3 +1,3 @@
 import Pkg
-Pkg.add(["Crayons", "DelimitedFiles"])
+Pkg.add(["Crayons"])
 println("✅ All Julia packages installed")

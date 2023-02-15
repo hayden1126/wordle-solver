@@ -1,21 +1,23 @@
-using DelimitedFiles
 using Crayons.Box
+FILEPATH = @__DIR__
 
-# Change to correct directory if not already in it
-if Base.source_dir() != pwd()
-    println("Entering Path: $(Base.source_dir())")
-    cd(Base.source_dir())
+# Sets up tmp directory
+if isdir("$FILEPATH/tmp")
+    rm("$FILEPATH/tmp", recursive=true)
 end
+mkdir("$FILEPATH/tmp")
 
 # Initialize global variables
-possible = vec(DelimitedFiles.readdlm("./words/words.txt", '\t', String))
+possible = readlines("$FILEPATH/words/words.txt")
 correctLetters = Set{Char}()
 wrongLetters = Set{Char}()
 autoView = false
+history = 0
 
 """Main Function"""
 function main()
     global correctLetters, wrongLetters, autoView
+    save()
     while true
         # Get input
         print(LIGHT_BLUE_FG, "o" * "-"^(displaysize(stdout)[2] - 2) * "o\n| ", BOLD, WHITE_FG, "input: ")
@@ -65,8 +67,9 @@ function main()
             # For invalid inputs
         else
             println(BOLD, RED_FG, "Invalid input, try again.")
+            continue
         end
-
+        save()
         # Automatic output of filtered list
         if autoView
             view_possible()
@@ -89,7 +92,7 @@ function check_commands(input::String)::Bool
     global autoView, possible, correctLetters, wrongLetters
     if input == "1e" || input == "exit"
         println(BOLD, MAGENTA_FG, "Program ended. \n")
-        exit()
+        cleanexit()
     elseif input == "1v"
         view_possible()
     elseif input == "1av"
@@ -98,11 +101,22 @@ function check_commands(input::String)::Bool
         autoView = false
     elseif input == "1r" || input == "reset"
         autoView = false
-        possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
+        possible = readlines("words.txt")
         println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
         println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(correctLetters)), ' '))
         println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(wrongLetters)), ' '))
+    elseif input == "1u"
+        undo()
+    elseif input == "1h" || input == "help"
+        println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
+        println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
+        println(BOLD, LIGHT_BLUE_FG, "1av: ", WHITE_FG, "Automatic view of filtered list of words")
+        println(BOLD, LIGHT_BLUE_FG, "1avoff: ", WHITE_FG, "Turn off automatic view")
+        println(BOLD, LIGHT_BLUE_FG, "1r/reset: ", WHITE_FG, "Reset program")
+        println(BOLD, LIGHT_BLUE_FG, "1i: ", WHITE_FG, "View letters in the word and letters not in the word")
+        println(BOLD, LIGHT_BLUE_FG, "1u: ", WHITE_FG, "Undo last input")
+        println(BOLD, LIGHT_BLUE_FG, "1h/help: ", WHITE_FG, "View help")
     else
         return false
     end
@@ -163,7 +177,7 @@ function view_possible()
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
     elseif len < 1
         println(BOLD, RED_FG, "No possible words. Program ended. \n")
-        exit()
+        cleanexit()
     else
         message = ""
         height = min(displaysize(stdout)[1] - 6, 20, len)
@@ -190,11 +204,52 @@ function check_endprogram()
     if isequal(length(possible), 1)
         view_possible()
         println(BOLD, MAGENTA_FG, "Program ended. 😄 \n")
-        exit()
+        cleanexit()
     elseif isequal(length(possible), 0)
         println(BOLD, RED_FG, "No possible words. Program ended. \n")
-        exit()
+        cleanexit()
     end
+end
+
+"""Function for saving the current input"""
+function save()
+    global possible, history, correctLetters, wrongLetters
+    mkdir("$FILEPATH/tmp/$history")
+    open("$FILEPATH/tmp/$history/possible.txt", "w") do io
+        for word in possible println(io, word) end
+    end
+    open("$FILEPATH/tmp/$history/correctLetters.txt", "w") do io
+        print(io, join(sort(collect(correctLetters))))
+    end
+    open("$FILEPATH/tmp/$history/wrongLetters.txt", "w") do io
+        print(io, join(sort(collect(wrongLetters))))
+    end
+    history += 1
+end
+
+"""Function for undoing the last input"""
+function undo()
+    global possible, history, correctLetters, wrongLetters
+    if history == 1
+        println(BOLD, RED_FG, "No history to undo.")
+        return
+    end
+    history -= 1
+
+    # Deletes newest saves
+    rm("$FILEPATH/tmp/$history", recursive=true)
+
+    # Loads previous saves
+    possible = readlines("$FILEPATH/tmp/$(history-1)/possible.txt")
+    correctLetters = Set(readline("$FILEPATH/tmp/$(history-1)/correctLetters.txt"))
+    wrongLetters = Set(readline("$FILEPATH/tmp/$(history-1)/wrongLetters.txt"))
+end
+
+"""Function for exiting the program"""
+function cleanexit()
+    global history
+    rm("$FILEPATH/tmp", recursive=true)
+    exit()
 end
 
 main()
