@@ -1,13 +1,15 @@
 using DelimitedFiles
 using Crayons.Box
 
-# Change to correct directory
-PATHINDEX = findall(l -> l == '/', Base.source_path())[end] - 1
-println("Entering Path: $(Base.source_path()[1:PATHINDEX])")
-cd(Base.source_path()[1:PATHINDEX])
+# Change to correct directory if not already in it
+if Base.source_dir() != pwd()
+    println("Entering Path: $(Base.source_dir())")
+    cd(Base.source_dir())
+end
 
 # Initialize global variables
-possible = vec(DelimitedFiles.readdlm("words.txt", '\t', String))
+WORDSPATH = "words.txt"
+possible = vec(DelimitedFiles.readdlm(WORDSPATH, '\t', String))
 correctLetters = Set{Char}()
 wrongLetters = Set{Char}()
 autoView = false
@@ -17,9 +19,9 @@ function main()
     global correctLetters, wrongLetters, autoView
     while true
         # Get input
-        print(LIGHT_BLUE_FG, "o"*"-"^(displaysize(stdout)[2]-2)*"o\n| ", BOLD, WHITE_FG, "input: ")
+        print(LIGHT_BLUE_FG, "o" * "-"^(displaysize(stdout)[2] - 2) * "o\n| ", BOLD, WHITE_FG, "input: ")
         input = lowercase(strip(readline()))
-        
+
         # Check if input is command or invalid
         if check_commands(input) || !check_input(input, "", false)
             continue
@@ -27,7 +29,7 @@ function main()
         # Filter for general conditions
         if all(isletter, replace(input, "/" => ""))
             inputSplit = split(input, '/')
-            
+
             # Checks input validity
             if isequal(length(inputSplit), 1)
                 push!(inputSplit, "")
@@ -40,8 +42,8 @@ function main()
             union!(correctLetters, inputSplit[1])
             union!(wrongLetters, inputSplit[2])
             updatepossible_generic(String(inputSplit[1]), String(inputSplit[2]))
-        
-        # Filter for Specific conditions
+
+            # Filter for Specific conditions
         elseif isnumeric(input[1]) && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             if isequal(input[2], 'y')
                 if check_contradict(string(input[3:end]), "")
@@ -52,8 +54,8 @@ function main()
             else
                 updatepossible_specific(parse(Int8, input[1]), false, collect(input[3:end]))
             end
-        
-        # Filter for repeating letters
+
+            # Filter for repeating letters
         elseif isletter(input[1]) && isequal(length(input), 3) && isequal(input[2], 'r') && isnumeric(input[3])
             if check_contradict(string(input[1]), "")
                 continue
@@ -61,9 +63,9 @@ function main()
             updatepossible_repeating(input[1], parse(Int8, input[3]))
             union!(correctLetters, input[1])
 
-        # For invalid inputs
+            # For invalid inputs
         else
-            println(BOLD, RED_FG, "Invalid input, try again.")      
+            println(BOLD, RED_FG, "Invalid input, try again.")
         end
 
         # Automatic output of filtered list
@@ -74,12 +76,12 @@ function main()
 end
 
 """Function for checking if 'correct' and 'wrong' contradict previous inputs in 'correctLetters' and 'wrongLetters (return true if contradicts, false otherwise)"""
-function check_contradict(correct::String, wrong::String = "")::Bool
+function check_contradict(correct::String, wrong::String="")::Bool
     global correctLetters, wrongLetters
     if length(intersect(correctLetters, wrong)) > 0 || length(intersect(wrongLetters, correct)) > 0
         println(BOLD, RED_FG, "Input contradicts previous input, try again.")
         return true
-    end   
+    end
     return false
 end
 
@@ -104,29 +106,29 @@ function check_commands(input::String)::Bool
         println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(wrongLetters)), ' '))
     else
         return false
-    end     
+    end
     return true
 end
 
 """Function for checking validity of input (return true if passes check, false otherwise)"""
-function check_input(input1::String, input2::String, mode::Bool = true)::Bool
+function check_input(input1::String, input2::String, mode::Bool=true)::Bool
     # Check for empty inputs
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
-        return false    
+        return false
     else
         # Check for repeated letters on both sides of '/'
         if length(intersect(input1, input2)) != 0
             println(BOLD, RED_FG, "Contradiction in input, try again.")
             return false
         end
-        
+
         # Check if any letters contradict previous inputs
         if mode
             return !check_contradict(input1, input2)
         end
     end
-    return true 
+    return true
 end
 
 """Function for filtering the list of words with specific conditions"""
@@ -141,9 +143,9 @@ function updatepossible_specific(pos::Int8, type::Bool, letters::Vector{Char})
 end
 
 """Function for filtering the list of words with general conditions"""
-function updatepossible_generic(correct::String = "", wrong::String = "")
+function updatepossible_generic(correct::String="", wrong::String="")
     global possible
-    filter!(word -> all(letter->(letter in word), correct) && !any(letter->(letter in word), wrong), possible)
+    filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), possible)
     check_endprogram()
 end
 
@@ -165,8 +167,8 @@ function view_possible()
         exit()
     else
         message = ""
-        height = min(displaysize(stdout)[1]-6, 20, len)
-        columns = Int16(ceil(len/height))
+        height = min(displaysize(stdout)[1] - 6, 20, len)
+        columns = Int16(ceil(len / height))
         space = min(6, (-5 + displaysize(stdout)[2] ÷ columns))
         if space < 1
             println(BOLD, LIGHT_BLUE_FG, "Too many possible words and not enough space to output, input more conditions.")
@@ -178,7 +180,7 @@ function view_possible()
                 end
                 message *= "\n"
             end
-            print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| Possible Word(s): $len\n|\n"*message*"|   \n")
+            print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| Possible Word(s): $len\n|\n" * message * "|   \n")
         end
     end
 end
