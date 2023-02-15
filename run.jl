@@ -8,8 +8,7 @@ if Base.source_dir() != pwd()
 end
 
 # Initialize global variables
-WORDSPATH = "words.txt"
-possible = vec(DelimitedFiles.readdlm(WORDSPATH, '\t', String))
+possible = vec(DelimitedFiles.readdlm("./words/words.txt", '\t', String))
 correctLetters = Set{Char}()
 wrongLetters = Set{Char}()
 autoView = false
