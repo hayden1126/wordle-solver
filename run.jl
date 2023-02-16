@@ -11,12 +11,13 @@ mkdir("$FILEPATH/tmp")
 POSSIBLE = readlines("$FILEPATH/words/words.txt")
 CORRECTLETTERS = Set{Char}()
 WRONGLETTERS = Set{Char}()
+INPUTS = Vector{String}()
 AUTOVIEW = false
 VERSION = 0
 
 """Main Function"""
 function main()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, AUTOVIEW
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, AUTOVIEW, INPUTS
     save()
 
     while true
@@ -28,6 +29,8 @@ function main()
         if check_commands(input) || !check_input(input, "", false)
             continue
         end
+        push!(INPUTS, input)
+
         # Filter for general conditions
         if all(isletter, replace(input, "/" => ""))
             inputSplit = split(input, '/')
@@ -150,9 +153,13 @@ end
 
 """Function for checking validity of input (return true if passes check, false otherwise)"""
 function check_input(input1::String, input2::String, mode::Bool=true)::Bool
+    global INPUTS
     # Check if empty inputs on both side of '/'
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
+        return false
+    elseif input1 in INPUTS && isempty(input2)
+        println(BOLD, RED_FG, "Repeated input, try again.")
         return false
     elseif count(x -> x == '/', input1) > 1 || count(x -> x == '/', input2) > 1
         println(BOLD, RED_FG, "Invalid input, try again.")
@@ -216,7 +223,7 @@ end
 
 """Function for undoing the last input"""
 function undo()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, INPUTS
     if VERSION == 1
         println(BOLD, RED_FG, "No previous version available.")
         return
@@ -225,6 +232,7 @@ function undo()
 
     # Deletes newest saves
     rm("$FILEPATH/tmp/$VERSION", recursive=true)
+    pop!(INPUTS)
 
     # Loads previous saves
     POSSIBLE = readlines("$FILEPATH/tmp/$(VERSION-1)/possible.txt")
@@ -232,9 +240,9 @@ function undo()
     WRONGLETTERS = Set(readline("$FILEPATH/tmp/$(VERSION-1)/wrongLetters.txt"))
 end
 
-function cleanexit()
+function cleanup()
     rm("$FILEPATH/tmp", recursive=true)
 end
-atexit(cleanexit)
+atexit(cleanup)
 
 main()
