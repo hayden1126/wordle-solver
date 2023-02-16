@@ -1,7 +1,3 @@
-# OUTDATED 
-To be updated within this week. Version below is from before 15-2-2023
-
-
 # Wordle Solver
 Wordle Solver is a terminal based program that assists solving the Wordle game on https://www.nytimes.com/games/wordle/index.html .
 - The program works by filtering words using your input.
