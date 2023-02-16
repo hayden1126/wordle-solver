@@ -85,9 +85,6 @@ function main()
             println(BOLD, RED_FG, "No possible words, try again.")
             undo()
             continue
-        elseif len == 1
-            view_possible()
-            
         end
 
         # Automatic output of filtered list
