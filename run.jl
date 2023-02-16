@@ -81,6 +81,7 @@ function main()
         if len == 0
             println(BOLD, RED_FG, "No possible words, try again.")
             undo()
+            continue
         elseif len == 1
             println(BOLD, LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o", "\n| Possible Word(s): 1 \n|\n|   $(POSSIBLE[1])\n|   ")
             print(BOLD, LIGHT_BLUE_FG, "o$("-"^(displaysize(stdout)[2]-2))o", "\n| Empty input to exit, anything else to continue. \n|\n|   ", WHITE_FG, "input: ")
@@ -121,11 +122,12 @@ function check_commands(input::String)::Bool
         view_possible()
     elseif input == "1avoff"
         AUTOVIEW = false
-    # elseif input == "1r" || input == "reset"
-    #     AUTOVIEW = false
-    #     POSSIBLE = readlines("$FILEPATH/words/words.txt")
-    #     rm("$FILEPATH/tmp/$VERSION", recursive=true)
-    #     println(BOLD, MAGENTA_FG, "Program reset.")
+    elseif input == "1r" || input == "reset"
+        AUTOVIEW = false
+        for _ in 1:VERSION-1
+            undo()
+        end
+        println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
         println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(CORRECTLETTERS)), ' '))
         println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(WRONGLETTERS)), ' '))
