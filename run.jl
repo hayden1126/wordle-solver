@@ -29,7 +29,6 @@ function main()
         if check_commands(input) || !check_input(input, "", false)
             continue
         end
-        push!(INPUTS, input)
 
         # Filter for general conditions
         if all(isletter, replace(input, "/" => ""))
@@ -80,19 +79,15 @@ function main()
         
         # Save and undo if no possible
         save()
+        push!(INPUTS, input)
         len = length(POSSIBLE)
         if len == 0
             println(BOLD, RED_FG, "No possible words, try again.")
             undo()
             continue
         elseif len == 1
-            println(BOLD, LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o", "\n| Possible Word(s): 1 \n|\n|   $(POSSIBLE[1])\n|   ")
-            print(BOLD, LIGHT_BLUE_FG, "o$("-"^(displaysize(stdout)[2]-2))o", "\n| Empty input to exit, anything else to continue. \n|\n|   ", WHITE_FG, "input: ")
-            input = lowercase(strip(readline()))
-            if input == ""
-                println(BOLD, MAGENTA_FG, "Program ended. 😄 \n")
-                exit()
-            end
+            view_possible()
+            
         end
 
         # Automatic output of filtered list
@@ -127,9 +122,7 @@ function check_commands(input::String)::Bool
         AUTOVIEW = false
     elseif input == "1r" || input == "reset"
         AUTOVIEW = false
-        for _ in 1:VERSION-1
-            undo()
-        end
+        for _ in 1:VERSION-1 undo() end
         println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
         println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(CORRECTLETTERS)), ' '))
@@ -158,7 +151,7 @@ function check_input(input1::String, input2::String, mode::Bool=true)::Bool
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
         return false
-    elseif input1 in INPUTS && isempty(input2)
+    elseif (input1 in INPUTS && isempty(input2)) || (union(CORRECTLETTERS, input1) == CORRECTLETTERS && isempty(input2)) || (length(intersect(input2, WRONGLETTERS)) == length(input2) && isempty(input1))
         println(BOLD, RED_FG, "Repeated input, try again.")
         return false
     elseif count(x -> x == '/', input1) > 1 || count(x -> x == '/', input2) > 1
