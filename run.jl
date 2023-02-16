@@ -1,5 +1,5 @@
 using Crayons.Box
-FILEPATH = @__DIR__
+const FILEPATH = @__DIR__
 
 # Sets up tmp directory
 if isdir("$FILEPATH/tmp")
@@ -8,16 +8,17 @@ end
 mkdir("$FILEPATH/tmp")
 
 # Initialize global variables
-possible = readlines("$FILEPATH/words/words.txt")
-correctLetters = Set{Char}()
-wrongLetters = Set{Char}()
-autoView = false
-history = 0
+POSSIBLE = readlines("$FILEPATH/words/words.txt")
+CORRECTLETTERS = Set{Char}()
+WRONGLETTERS = Set{Char}()
+AUTOVIEW = false
+VERSION = 0
 
 """Main Function"""
 function main()
-    global correctLetters, wrongLetters, autoView
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, AUTOVIEW
     save()
+
     while true
         # Get input
         print(LIGHT_BLUE_FG, "o" * "-"^(displaysize(stdout)[2] - 2) * "o\n| ", BOLD, WHITE_FG, "input: ")
@@ -40,38 +41,58 @@ function main()
             end
 
             # Update correctLetters, wrongLetters and possible
-            union!(correctLetters, inputSplit[1])
-            union!(wrongLetters, inputSplit[2])
-            updatepossible_generic(String(inputSplit[1]), String(inputSplit[2]))
+            union!(CORRECTLETTERS, inputSplit[1])
+            union!(WRONGLETTERS, inputSplit[2])
+            correct, wrong = String(inputSplit[1]), String(inputSplit[2])
+            filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), POSSIBLE)
 
-            # Filter for Specific conditions
+        # Filter for Specific conditions
         elseif isnumeric(input[1]) && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
+            pos = parse(Int8, input[1])
+            letters = collect(input[3:end])
             if isequal(input[2], 'y')
                 if check_contradict(string(input[3:end]), "")
                     continue
                 end
-                updatepossible_specific(parse(Int8, input[1]), true, collect(input[3:end]))
-                union!(correctLetters, input[3])
+                filter!(word -> (word[pos] in letters), POSSIBLE)
+                union!(CORRECTLETTERS, input[3])
             else
-                updatepossible_specific(parse(Int8, input[1]), false, collect(input[3:end]))
+                filter!(word -> !(word[pos] in letters), POSSIBLE)
             end
 
-            # Filter for repeating letters
+        # Filter for repeating letters
         elseif isletter(input[1]) && isequal(length(input), 3) && isequal(input[2], 'r') && isnumeric(input[3])
             if check_contradict(string(input[1]), "")
                 continue
             end
-            updatepossible_repeating(input[1], parse(Int8, input[3]))
-            union!(correctLetters, input[1])
+            times = parse(Int8, input[3])
+            filter!(word -> count(==(input[1]), word) >= times, POSSIBLE)
+            union!(CORRECTLETTERS, input[1])
 
-            # For invalid inputs
+        # For invalid inputs
         else
             println(BOLD, RED_FG, "Invalid input, try again.")
             continue
         end
+        
+        # Save and undo if no possible
         save()
+        len = length(POSSIBLE)
+        if len == 0
+            println(BOLD, RED_FG, "No possible words, try again.")
+            undo()
+        elseif len == 1
+            println(BOLD, LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o", "\n| Possible Word(s): 1 \n|\n|   $(POSSIBLE[1])\n|   ")
+            print(BOLD, LIGHT_BLUE_FG, "o$("-"^(displaysize(stdout)[2]-2))o", "\n| Empty input to exit, anything else to continue. \n|\n|   ", WHITE_FG, "input: ")
+            input = lowercase(strip(readline()))
+            if input == ""
+                println(BOLD, MAGENTA_FG, "Program ended. 😄 \n")
+                exit()
+            end
+        end
+
         # Automatic output of filtered list
-        if autoView
+        if AUTOVIEW || len <= 10
             view_possible()
         end
     end
@@ -79,8 +100,8 @@ end
 
 """Function for checking if 'correct' and 'wrong' contradict previous inputs in 'correctLetters' and 'wrongLetters (return true if contradicts, false otherwise)"""
 function check_contradict(correct::String, wrong::String="")::Bool
-    global correctLetters, wrongLetters
-    if length(intersect(correctLetters, wrong)) > 0 || length(intersect(wrongLetters, correct)) > 0
+    global CORRECTLETTERS, WRONGLETTERS
+    if length(intersect(CORRECTLETTERS, wrong)) > 0 || length(intersect(WRONGLETTERS, correct)) > 0
         println(BOLD, RED_FG, "Input contradicts previous input, try again.")
         return true
     end
@@ -89,26 +110,28 @@ end
 
 """Function for checking special inputs/commands (return true if input is a command, false otherwise)"""
 function check_commands(input::String)::Bool
-    global autoView, possible, correctLetters, wrongLetters
+    global AUTOVIEW, VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
     if input == "1e" || input == "exit"
         println(BOLD, MAGENTA_FG, "Program ended. \n")
-        cleanexit()
+        exit()
     elseif input == "1v"
         view_possible()
     elseif input == "1av"
-        autoView = true
+        AUTOVIEW = true
+        view_possible()
     elseif input == "1avoff"
-        autoView = false
-    elseif input == "1r" || input == "reset"
-        autoView = false
-        possible = readlines("words.txt")
-        println(BOLD, MAGENTA_FG, "Program reset.")
+        AUTOVIEW = false
+    # elseif input == "1r" || input == "reset"
+    #     AUTOVIEW = false
+    #     POSSIBLE = readlines("$FILEPATH/words/words.txt")
+    #     rm("$FILEPATH/tmp/$VERSION", recursive=true)
+    #     println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
-        println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(correctLetters)), ' '))
-        println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(wrongLetters)), ' '))
+        println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(CORRECTLETTERS)), ' '))
+        println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(WRONGLETTERS)), ' '))
     elseif input == "1u"
         undo()
-    elseif input == "1h" || input == "help"
+    elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
         println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
         println(BOLD, LIGHT_BLUE_FG, "1av: ", WHITE_FG, "Automatic view of filtered list of words")
@@ -116,7 +139,7 @@ function check_commands(input::String)::Bool
         println(BOLD, LIGHT_BLUE_FG, "1r/reset: ", WHITE_FG, "Reset program")
         println(BOLD, LIGHT_BLUE_FG, "1i: ", WHITE_FG, "View letters in the word and letters not in the word")
         println(BOLD, LIGHT_BLUE_FG, "1u: ", WHITE_FG, "Undo last input")
-        println(BOLD, LIGHT_BLUE_FG, "1h/help: ", WHITE_FG, "View help")
+        println(BOLD, LIGHT_BLUE_FG, "1h/help/?: ", WHITE_FG, "View help")
     else
         return false
     end
@@ -125,9 +148,12 @@ end
 
 """Function for checking validity of input (return true if passes check, false otherwise)"""
 function check_input(input1::String, input2::String, mode::Bool=true)::Bool
-    # Check for empty inputs
+    # Check if empty inputs on both side of '/'
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
+        return false
+    elseif count(x -> x == '/', input1) > 1 || count(x -> x == '/', input2) > 1
+        println(BOLD, RED_FG, "Invalid input, try again.")
         return false
     else
         # Check for repeated letters on both sides of '/'
@@ -144,41 +170,13 @@ function check_input(input1::String, input2::String, mode::Bool=true)::Bool
     return true
 end
 
-"""Function for filtering the list of words with specific conditions"""
-function updatepossible_specific(pos::Int8, type::Bool, letters::Vector{Char})
-    global possible
-    if type
-        filter!(word -> (word[pos] in letters), possible)
-    else
-        filter!(word -> !(word[pos] in letters), possible)
-    end
-    check_endprogram()
-end
-
-"""Function for filtering the list of words with general conditions"""
-function updatepossible_generic(correct::String="", wrong::String="")
-    global possible
-    filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), possible)
-    check_endprogram()
-end
-
-"""Function for filtering the list of words with repeating letters"""
-function updatepossible_repeating(letter::Char, times::Int8)
-    global possible
-    filter!(word -> count(==(letter), word) >= times, possible)
-    check_endprogram()
-end
-
 """Function for outputing the Filtered list"""
 function view_possible()
-    global possible
-    len = length(possible)
+    global POSSIBLE
+    len = length(POSSIBLE)
     if len > 120
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
-    elseif len < 1
-        println(BOLD, RED_FG, "No possible words. Program ended. \n")
-        cleanexit()
-    else
+    elseif len > 0
         message = ""
         height = min(displaysize(stdout)[1] - 6, 20, len)
         columns = Int16(ceil(len / height))
@@ -189,7 +187,7 @@ function view_possible()
             for i in 1:height
                 message *= "|   "
                 for j in i:height:len
-                    message *= (possible[j] * " "^space)
+                    message *= (POSSIBLE[j] * " "^space)
                 end
                 message *= "\n"
             end
@@ -198,58 +196,43 @@ function view_possible()
     end
 end
 
-"""Function for checking whether the program should end or not"""
-function check_endprogram()
-    global possible
-    if isequal(length(possible), 1)
-        view_possible()
-        println(BOLD, MAGENTA_FG, "Program ended. 😄 \n")
-        cleanexit()
-    elseif isequal(length(possible), 0)
-        println(BOLD, RED_FG, "No possible words. Program ended. \n")
-        cleanexit()
-    end
-end
-
 """Function for saving the current input"""
 function save()
-    global possible, history, correctLetters, wrongLetters
-    mkdir("$FILEPATH/tmp/$history")
-    open("$FILEPATH/tmp/$history/possible.txt", "w") do io
-        for word in possible println(io, word) end
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
+    mkdir("$FILEPATH/tmp/$VERSION")
+    open("$FILEPATH/tmp/$VERSION/possible.txt", "w") do io
+        for word in POSSIBLE println(io, word) end
     end
-    open("$FILEPATH/tmp/$history/correctLetters.txt", "w") do io
-        print(io, join(sort(collect(correctLetters))))
+    open("$FILEPATH/tmp/$VERSION/correctLetters.txt", "w") do io
+        print(io, join(sort(collect(CORRECTLETTERS))))
     end
-    open("$FILEPATH/tmp/$history/wrongLetters.txt", "w") do io
-        print(io, join(sort(collect(wrongLetters))))
+    open("$FILEPATH/tmp/$VERSION/wrongLetters.txt", "w") do io
+        print(io, join(sort(collect(WRONGLETTERS))))
     end
-    history += 1
+    VERSION += 1
 end
 
 """Function for undoing the last input"""
 function undo()
-    global possible, history, correctLetters, wrongLetters
-    if history == 1
-        println(BOLD, RED_FG, "No history to undo.")
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
+    if VERSION == 1
+        println(BOLD, RED_FG, "No previous version available.")
         return
     end
-    history -= 1
+    VERSION -= 1
 
     # Deletes newest saves
-    rm("$FILEPATH/tmp/$history", recursive=true)
+    rm("$FILEPATH/tmp/$VERSION", recursive=true)
 
     # Loads previous saves
-    possible = readlines("$FILEPATH/tmp/$(history-1)/possible.txt")
-    correctLetters = Set(readline("$FILEPATH/tmp/$(history-1)/correctLetters.txt"))
-    wrongLetters = Set(readline("$FILEPATH/tmp/$(history-1)/wrongLetters.txt"))
+    POSSIBLE = readlines("$FILEPATH/tmp/$(VERSION-1)/possible.txt")
+    CORRECTLETTERS = Set(readline("$FILEPATH/tmp/$(VERSION-1)/correctLetters.txt"))
+    WRONGLETTERS = Set(readline("$FILEPATH/tmp/$(VERSION-1)/wrongLetters.txt"))
 end
 
-"""Function for exiting the program"""
 function cleanexit()
-    global history
     rm("$FILEPATH/tmp", recursive=true)
-    exit()
 end
+atexit(cleanexit)
 
 main()
