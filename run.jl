@@ -1,4 +1,5 @@
-using Crayons.Box
+using Crayons.Box, PyCall
+@pyimport webbrowser
 const FILEPATH = @__DIR__
 
 # Sets up tmp directory
@@ -126,6 +127,9 @@ function check_commands(input::String)::Bool
         println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(WRONGLETTERS)), ' '))
     elseif input == "1u"
         undo()
+    elseif input == "1w"
+        webbrowser.open("https://www.nytimes.com/games/wordle/index.html")
+        println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
         println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
@@ -134,6 +138,7 @@ function check_commands(input::String)::Bool
         println(BOLD, LIGHT_BLUE_FG, "1r/reset: ", WHITE_FG, "Reset program")
         println(BOLD, LIGHT_BLUE_FG, "1i: ", WHITE_FG, "View letters in the word and letters not in the word")
         println(BOLD, LIGHT_BLUE_FG, "1u: ", WHITE_FG, "Undo last input")
+        println(BOLD, LIGHT_BLUE_FG, "1w: ", WHITE_FG, "Launches the official Wordle website in your browser")
         println(BOLD, LIGHT_BLUE_FG, "1h/help/?: ", WHITE_FG, "View help")
     else
         return false
