@@ -82,6 +82,5 @@ Wordle is a game where you have to guess a 5-letter word. You have 6 tries and y
 
 ## Afterword
 
-Wordle Solver is a mini-project developed in a weekend. There are still limitations. More functions will be added soon to improve program and user experience. Finally, this is open-sourced and you can use/copy this for your own uses.
-
+Wordle Solver is a mini-project and has limitations. More functions will be added soon to improve program and user experience.
 
