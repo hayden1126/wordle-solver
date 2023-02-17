@@ -1,5 +1,5 @@
-using Crayons.Box, PyCall
-@pyimport webbrowser
+using Crayons.Box
+include("openURL.jl")
 const FILEPATH = @__DIR__
 
 # Sets up tmp directory
@@ -128,7 +128,7 @@ function check_commands(input::String)::Bool
     elseif input == "1u"
         undo()
     elseif input == "1w"
-        webbrowser.open("https://www.nytimes.com/games/wordle/index.html")
+        open_in_default_browser("https://www.nytimes.com/games/wordle/index.html")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
