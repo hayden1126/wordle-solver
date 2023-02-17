@@ -1,7 +1,7 @@
 # Wordle Solver
 Wordle Solver is a terminal based program that assists solving the Wordle game on https://www.nytimes.com/games/wordle/index.html .
 - The program works by filtering words using your input.
-- The program is coded in Julia
+- The program is coded in Julia and tested for Julia v1.8.4 (should work for most other versions too)
 
 
 ## Introduction
