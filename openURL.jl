@@ -9,8 +9,11 @@ function open_in_default_browser(url::AbstractString)::Bool
         if Sys.isapple()
             Base.run(`open $url`)
             return true
-        elseif Sys.iswindows() || detectwsl()
+        elseif Sys.iswindows()
             Base.run(`cmd.exe /s /c start "" /b $url`)
+            return true
+        elseif detectwsl()
+            success(`cmd.exe /s /c start "" /b $url`)
             return true
         elseif Sys.islinux()
             browser = "xdg-open"
