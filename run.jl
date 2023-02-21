@@ -1,15 +1,16 @@
 using Crayons.Box
 include("openURL.jl")
-const FILEPATH = @__DIR__
+const FILEDIR = @__DIR__
+const WORDLENGTH = 5
 
 # Sets up tmp directory
-if isdir("$FILEPATH/tmp")
-    rm("$FILEPATH/tmp", recursive=true)
+if isdir("$FILEDIR/tmp")
+    rm("$FILEDIR/tmp", recursive=true)
 end
-mkdir("$FILEPATH/tmp")
+mkdir("$FILEDIR/tmp")
 
 # Initialize global variables
-POSSIBLE = readlines("$FILEPATH/words/words.txt")
+POSSIBLE = readlines("$FILEDIR/words/words_$(WORDLENGTH)ltr.txt")
 CORRECTLETTERS = Set{Char}()
 WRONGLETTERS = Set{Char}()
 INPUTS = Vector{String}()
@@ -50,7 +51,7 @@ function main()
             filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), POSSIBLE)
 
         # Filter for Specific conditions
-        elseif isnumeric(input[1]) && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
+        elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             pos = parse(Int8, input[1])
             letters = collect(input[3:end])
             if isequal(input[2], 'y')
@@ -180,7 +181,7 @@ function view_possible()
     len = length(POSSIBLE)
     if len > 120
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
-    elseif len > 0
+    elseif len > 120
         message = ""
         height = min(displaysize(stdout)[1] - 6, 20, len)
         columns = Int16(ceil(len / height))
@@ -203,14 +204,14 @@ end
 """Function for saving the current input"""
 function save()
     global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
-    mkdir("$FILEPATH/tmp/$VERSION")
-    open("$FILEPATH/tmp/$VERSION/possible.txt", "w") do io
+    mkdir("$FILEDIR/tmp/$VERSION")
+    open("$FILEDIR/tmp/$VERSION/possible.txt", "w") do io
         for word in POSSIBLE println(io, word) end
     end
-    open("$FILEPATH/tmp/$VERSION/correctLetters.txt", "w") do io
+    open("$FILEDIR/tmp/$VERSION/correctLetters.txt", "w") do io
         print(io, join(sort(collect(CORRECTLETTERS))))
     end
-    open("$FILEPATH/tmp/$VERSION/wrongLetters.txt", "w") do io
+    open("$FILEDIR/tmp/$VERSION/wrongLetters.txt", "w") do io
         print(io, join(sort(collect(WRONGLETTERS))))
     end
     VERSION += 1
@@ -226,17 +227,17 @@ function undo()
     VERSION -= 1
 
     # Deletes newest saves
-    rm("$FILEPATH/tmp/$VERSION", recursive=true)
+    rm("$FILEDIR/tmp/$VERSION", recursive=true)
     pop!(INPUTS)
 
     # Loads previous saves
-    POSSIBLE = readlines("$FILEPATH/tmp/$(VERSION-1)/possible.txt")
-    CORRECTLETTERS = Set(readline("$FILEPATH/tmp/$(VERSION-1)/correctLetters.txt"))
-    WRONGLETTERS = Set(readline("$FILEPATH/tmp/$(VERSION-1)/wrongLetters.txt"))
+    POSSIBLE = readlines("$FILEDIR/tmp/$(VERSION-1)/possible.txt")
+    CORRECTLETTERS = Set(readline("$FILEDIR/tmp/$(VERSION-1)/correctLetters.txt"))
+    WRONGLETTERS = Set(readline("$FILEDIR/tmp/$(VERSION-1)/wrongLetters.txt"))
 end
 
 function cleanup()
-    rm("$FILEPATH/tmp", recursive=true)
+    rm("$FILEDIR/tmp", recursive=true)
 end
 atexit(cleanup)
 
