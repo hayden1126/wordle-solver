@@ -181,7 +181,7 @@ function view_possible()
     len = length(POSSIBLE)
     if len > 120
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
-    elseif len > 120
+    elseif len > 0
         message = ""
         height = min(displaysize(stdout)[1] - 6, 20, len)
         columns = Int16(ceil(len / height))
