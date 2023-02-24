@@ -13,13 +13,14 @@ mkdir("$FILEDIR/tmp")
 POSSIBLE = readlines("$FILEDIR/words/words_$(WORDLENGTH)ltr.txt")
 CORRECTLETTERS = Set{Char}()
 WRONGLETTERS = Set{Char}()
+LOCKED = [fill('0', WORDLENGTH)]
 INPUTS = Vector{String}()
 AUTOVIEW = false
 VERSION = 0
 
 """Main Function"""
 function main()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, AUTOVIEW, INPUTS
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, AUTOVIEW, INPUTS, LOCKED
     save()
 
     while true
@@ -54,16 +55,21 @@ function main()
         elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             pos = parse(Int8, input[1])
             letters = collect(input[3:end])
+            if LOCKED[end][pos] != '0'
+                println(BOLD, RED_FG, "Letter $pos has already been locked, try again.")
+                continue
+            end
+            push!(LOCKED, copy(LOCKED[end]))
             if isequal(input[2], 'y')
                 if check_contradict(string(input[3:end]), "")
                     continue
                 end
+                LOCKED[end][pos] = input[3]
                 filter!(word -> (word[pos] in letters), POSSIBLE)
                 union!(CORRECTLETTERS, input[3])
             else
                 filter!(word -> !(word[pos] in letters), POSSIBLE)
             end
-
         # Filter for repeating letters
         elseif isletter(input[1]) && isequal(length(input), 3) && isequal(input[2], 'r') && isnumeric(input[3])
             if check_contradict(string(input[1]), "")
@@ -219,7 +225,7 @@ end
 
 """Function for undoing the last input"""
 function undo()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, INPUTS
+    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, INPUTS, LOCKED
     if VERSION == 1
         println(BOLD, RED_FG, "No previous version available.")
         return
@@ -229,6 +235,7 @@ function undo()
     # Deletes newest saves
     rm("$FILEDIR/tmp/$VERSION", recursive=true)
     pop!(INPUTS)
+    pop!(LOCKED)
 
     # Loads previous saves
     POSSIBLE = readlines("$FILEDIR/tmp/$(VERSION-1)/possible.txt")
