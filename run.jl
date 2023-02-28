@@ -1,5 +1,6 @@
 using Crayons.Box
 include("openURL.jl")
+include("recommend.jl")
 const FILEDIR = @__DIR__
 const WORDLENGTH = 5
 
@@ -13,7 +14,7 @@ mkdir("$FILEDIR/tmp")
 POSSIBLE = readlines("$FILEDIR/words/words_$(WORDLENGTH)ltr.txt")
 CORRECTLETTERS = Set{Char}()
 WRONGLETTERS = Set{Char}()
-LOCKED = [fill('0', WORDLENGTH)]
+LOCKED = [fill('_', WORDLENGTH)]
 INPUTS = Vector{String}()
 AUTOVIEW = false
 VERSION = 0
@@ -24,6 +25,8 @@ function main()
     save()
 
     while true
+        updateLOCKED = false
+
         # Get input
         print(LIGHT_BLUE_FG, "o" * "-"^(displaysize(stdout)[2] - 2) * "o\n| ", BOLD, WHITE_FG, "input: ")
         input = lowercase(strip(readline()))
@@ -32,7 +35,7 @@ function main()
         if check_commands(input) || !check_input(input, "", false)
             continue
         end
-
+        
         # Filter for general conditions
         if all(isletter, replace(input, "/" => ""))
             inputSplit = split(input, '/')
@@ -42,6 +45,7 @@ function main()
                 push!(inputSplit, "")
             end
             if !check_input(String(inputSplit[1]), String(inputSplit[2]))
+                println(true)
                 continue
             end
 
@@ -55,16 +59,16 @@ function main()
         elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             pos = parse(Int8, input[1])
             letters = collect(input[3:end])
-            if LOCKED[end][pos] != '0'
+            if LOCKED[end][pos] != '_'
                 println(BOLD, RED_FG, "Letter $pos has already been locked, try again.")
                 continue
             end
-            push!(LOCKED, copy(LOCKED[end]))
+            
             if isequal(input[2], 'y')
                 if check_contradict(string(input[3:end]), "")
                     continue
                 end
-                LOCKED[end][pos] = input[3]
+                updateLOCKED = true
                 filter!(word -> (word[pos] in letters), POSSIBLE)
                 union!(CORRECTLETTERS, input[3])
             else
@@ -86,6 +90,8 @@ function main()
         end
         
         # Save and undo if no possible
+        push!(LOCKED, copy(LOCKED[end]))
+        if updateLOCKED LOCKED[end][pos] = input[3] end
         save()
         push!(INPUTS, input)
         len = length(POSSIBLE)
@@ -97,7 +103,7 @@ function main()
 
         # Automatic output of filtered list
         if AUTOVIEW || len <= 10
-            view_possible()
+            view_possible(POSSIBLE)
         end
     end
 end
@@ -114,15 +120,15 @@ end
 
 """Function for checking special inputs/commands (return true if input is a command, false otherwise)"""
 function check_commands(input::String)::Bool
-    global AUTOVIEW, VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
+    global AUTOVIEW, VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTER, LOCKED
     if input == "1e" || input == "exit"
         println(BOLD, MAGENTA_FG, "Program ended. \n")
         exit()
     elseif input == "1v"
-        view_possible()
+        view_possible(POSSIBLE)
     elseif input == "1av"
         AUTOVIEW = true
-        view_possible()
+        view_possible(POSSIBLE)
     elseif input == "1avoff"
         AUTOVIEW = false
     elseif input == "1r" || input == "reset"
@@ -130,6 +136,7 @@ function check_commands(input::String)::Bool
         for _ in 1:VERSION-1 undo() end
         println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
+        println(BOLD, LIGHT_BLUE_FG, "Word: ", GREEN_FG, join(LOCKED[end]))
         println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(CORRECTLETTERS)), ' '))
         println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(WRONGLETTERS)), ' '))
     elseif input == "1u"
@@ -137,6 +144,8 @@ function check_commands(input::String)::Bool
     elseif input == "1w"
         open_in_default_browser("https://www.nytimes.com/games/wordle/index.html")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
+    elseif input == "1g"
+        view_possible(filter_guesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end]), "Recommended guesses")
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
         println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
@@ -182,9 +191,8 @@ function check_input(input1::String, input2::String, mode::Bool=true)::Bool
 end
 
 """Function for outputing the Filtered list"""
-function view_possible()
-    global POSSIBLE
-    len = length(POSSIBLE)
+function view_possible(wordlist::Vector{String}, mode::String="Possible word(s)")
+    len = length(wordlist)
     if len > 120
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
     elseif len > 0
@@ -198,11 +206,11 @@ function view_possible()
             for i in 1:height
                 message *= "|   "
                 for j in i:height:len
-                    message *= (POSSIBLE[j] * " "^space)
+                    message *= (wordlist[j] * " "^space)
                 end
                 message *= "\n"
             end
-            print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| Possible Word(s): $len\n|\n" * message * "|   \n")
+            print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| $mode: $len\n|\n" * message * "|   \n")
         end
     end
 end
