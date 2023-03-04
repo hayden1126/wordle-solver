@@ -46,7 +46,6 @@ function main()
                 push!(inputSplit, "")
             end
             if !check_input(String(inputSplit[1]), String(inputSplit[2]))
-                println(true)
                 continue
             end
 
@@ -66,8 +65,8 @@ function main()
             end
             
             if isequal(input[2], 'y')
-                if check_contradict(string(input[3:end]), "")
-                    continue
+                if check_contradict(string(input[3:end]), "") 
+                    continue 
                 end
                 updateLOCKED = true
                 filter!(word -> (word[pos] in letters), POSSIBLE)
@@ -75,17 +74,34 @@ function main()
             else
                 filter!(word -> !(word[pos] in letters), POSSIBLE)
             end
+
         # Filter for repeating letters
-        elseif isletter(input[1]) && isequal(length(input), 3) && isequal(input[2], 'r') && isnumeric(input[3])
-            if check_contradict(string(input[1]), "")
-                continue
+        elseif isletter(input[1]) && length(input) > 2 && all(isnumeric, input[3:end])
+            
+            # Filter for GREEDY repeating letters
+            if isequal(input[2], 'r')
+                if check_contradict(string(input[1]), "") 
+                    continue 
+                end
+                times = parse(Int8, input[3:end])
+                filter!(word -> count(==(input[1]), word) >= times, POSSIBLE)
+                union!(CORRECTLETTERS, input[1])
+        
+            # Filter for NON-GREEDY repeating letters
+            elseif isequal(input[2], 'o')
+                if check_contradict(string(input[1]), "") 
+                    continue 
+                end
+                times = parse(Int8, input[3:end])
+                filter!(word -> count(==(input[1]), word) == times, POSSIBLE)
+                union!(CORRECTLETTERS, input[1])
+            else
+                @goto invalidinput
             end
-            times = parse(Int8, input[3])
-            filter!(word -> count(==(input[1]), word) >= times, POSSIBLE)
-            union!(CORRECTLETTERS, input[1])
 
         # For invalid inputs
         else
+            @label invalidinput
             println(BOLD, RED_FG, "Invalid input, try again.")
             continue
         end
@@ -145,7 +161,7 @@ function check_commands(input::String)::Bool
     elseif input == "1w"
         open_in_default_browser("https://www.nytimes.com/games/wordle/index.html")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
-    elseif input[1:2] == "1g"
+    elseif startswith(input, "1g")
         if length(input) > 3 && all(isnumeric, input[4:end])
             number = parse(Int, input[4:end])
             if number > 60
