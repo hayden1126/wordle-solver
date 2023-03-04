@@ -1,8 +1,9 @@
 using Crayons.Box
-include("openURL.jl")
-include("recommend.jl")
+
 const FILEDIR = @__DIR__
 const WORDLENGTH = 5
+include("$FILEDIR/src/openURL.jl")
+include("$FILEDIR/src/recommend.jl")
 
 # Sets up tmp directory
 if isdir("$FILEDIR/tmp")

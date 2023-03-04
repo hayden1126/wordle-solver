@@ -1,6 +1,3 @@
-const FILEDIR = @__DIR__
-const WORDLENGTH = 5
-
 sigmoid(z::Real) = 1.0 / (1.0 + exp(-z))
 
 # Count the number of words that contain a letter and the number of times a letter appears in a word
