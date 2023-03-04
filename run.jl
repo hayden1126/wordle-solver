@@ -144,8 +144,20 @@ function check_commands(input::String)::Bool
     elseif input == "1w"
         open_in_default_browser("https://www.nytimes.com/games/wordle/index.html")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
-    elseif input == "1g"
-        view_possible(filter_guesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end]), "Recommended guesses")
+    elseif input[1:2] == "1g"
+        if length(input) > 3 && all(isnumeric, input[4:end])
+            number = parse(Int, input[4:end])
+            if number > 60
+                println(BOLD, RED_FG, "Number too large, set to 60.")
+                number = 60
+            elseif number < 1
+                println(BOLD, RED_FG, "Number too small, set to 1.")
+                number = 1
+            end
+        else
+            number = 5
+        end
+        view_possible(filter_guesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end], number), false)
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
         println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
@@ -191,7 +203,7 @@ function check_input(input1::String, input2::String, mode::Bool=true)::Bool
 end
 
 """Function for outputing the Filtered list"""
-function view_possible(wordlist::Vector{String}, mode::String="Possible word(s)")
+function view_possible(wordlist::Vector{String}, mode::Bool=true)
     len = length(wordlist)
     if len > 120
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
@@ -210,7 +222,11 @@ function view_possible(wordlist::Vector{String}, mode::String="Possible word(s)"
                 end
                 message *= "\n"
             end
-            print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| $mode: $len\n|\n" * message * "|   \n")
+            if mode
+                print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| Possible word(s): $len\n|\n" * message * "|   \n")
+            else
+                print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| Recommended words: \n|\n" * message * "|   \n")
+            end
         end
     end
 end

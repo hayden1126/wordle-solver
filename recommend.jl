@@ -62,11 +62,11 @@ function score(word::String, wordcount::Dict{Char, Int}, repeatcount::Dict{Char,
 end
 
 # Rank the guesses by the number of times they appear in the possible words
-function filter_guesses(possible::Vector{String}, correct::Set{Char}, wrong::Set{Char}, locked::Vector{Char})::Vector{String}
+function filter_guesses(possible::Vector{String}, correct::Set{Char}, wrong::Set{Char}, locked::Vector{Char}, number::Int=5)::Vector{String}
     len = length(possible)
     if len == 2 return possible end
     guesses = readlines("$FILEDIR/words/guess_$(WORDLENGTH)ltr.txt")
     wordcount, repeatcount = word_count(possible)
     sort!(guesses, by = x -> (score(x, wordcount, repeatcount, correct, wrong, locked, len)), rev = true)
-    return guesses[1:60]
+    return guesses[1:number]
 end
