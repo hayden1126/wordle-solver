@@ -1,6 +1,6 @@
 # Wordle Solver
 Wordle Solver is a CLI-based program that assists solving the Wordle game on https://www.nytimes.com/games/wordle/index.html .
-- The program works by filtering words using your input.
+- The program works by filtering words using your input and recommending you words to guess for more information.
 - The program is coded in Julia and tested for Julia v1.8.4 (should work for most other versions too)
 
 
