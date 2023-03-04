@@ -53,7 +53,8 @@ Wordle is a game where you have to guess a 5-letter word. You have 6 tries and y
     - Conversely, you can input `3yi` meaning the `3`rd character of the actual word is `i` (`y` representing yes/is)
 
     #### 3. Repeating conditions
-    - If you know that the word has repeated letters, for example if there are 2 or more 'e's in the word, input `er2` meaning `e` repeats at least `2` times
+    - If the word has repeated letters, for example if there are 2 or MORE 'e's in the word, input `er2` meaning `e` repeats AT LEAST `2` times
+    - If the letter only repeats EXACTLY 2 times, input `eo2` meaning `e` repeats ONLY `2` times
 
     #### 4. Special commands/inputs
     - input `1g` or `1g <optional number>` to view/print out that number of recommended words (words that can help you get the most amount of information)
