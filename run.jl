@@ -183,7 +183,7 @@ function check_commands(input::String)::Bool
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
         println(BOLD, LIGHT_BLUE_FG, "1g: ", WHITE_FG, "View recommended guesses within all words")
-        println(BOLD, LIGHT_BLUE_FG, "1gp: ", WHITE_FG, "View recommended guesses within Possible words only")
+        println(BOLD, LIGHT_BLUE_FG, "1gp: ", WHITE_FG, "View recommended guesses within Possible words only for Hard mode")
         println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
         println(BOLD, LIGHT_BLUE_FG, "1av: ", WHITE_FG, "Automatic view of filtered list of words")
         println(BOLD, LIGHT_BLUE_FG, "1avoff: ", WHITE_FG, "Turn off automatic view")
