@@ -58,6 +58,7 @@ Wordle is a game where you have to guess a 5-letter word. You have 6 tries and y
 
     #### 4. Special commands/inputs
     - input `1g` or `1g <optional number>` to view/print out that number of recommended words (words that can help you get the most amount of information)
+    - input `1gp` to view recommended words from only possible words (used for Wordle Unlimited Hard mode)
     - input `1v` to view/print out a list of the filtered possible words
     - input `1av` to turn ON Auto-View (which automatically prints out the list of filtered words every time you input something)
     - input `1avoff` to turn OFF Auto-View (This is turned back on if the number of possible words left is 10 or less)
@@ -66,6 +67,7 @@ Wordle is a game where you have to guess a 5-letter word. You have 6 tries and y
     - input `1r` or `reset` to Reset the program
     - input `1e` or `exit` to End program (Program ends automatically when the Wordle has been solved)
     - input `1w` to launch the official Wordle website onto your browser
+    - input `1wu` to launch Wordle Unlimited onto your browser
     - input `1h` or `help` or `?` to list descriptions for each special command
 
 - For the above example, after inputing the filtering conditions, I would type `1g` to get some recommended words:
