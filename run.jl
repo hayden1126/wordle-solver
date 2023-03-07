@@ -161,6 +161,9 @@ function check_commands(input::String)::Bool
     elseif input == "1w"
         open_in_default_browser("https://www.nytimes.com/games/wordle/index.html")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
+    elseif input == "1wu"
+        open_in_default_browser("https://wordleunlimited.org/")
+        println(BOLD, LIGHT_BLUE_FG, "Launched Wordle Unlimited in your browser")
     elseif startswith(input, "1g")
         if length(input) > 3 && all(isnumeric, input[4:end])
             number = parse(Int, input[4:end])
@@ -174,9 +177,15 @@ function check_commands(input::String)::Bool
         else
             number = 5
         end
-        view_possible(filter_guesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end], number), false)
+        if startswith(input, "1gp")
+            view_possible(filter_possibleguesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end], number), false)
+        else
+            view_possible(filter_guesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end], number), false)
+        end
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
+        println(BOLD, LIGHT_BLUE_FG, "1g: ", WHITE_FG, "View recommended guesses within all words")
+        println(BOLD, LIGHT_BLUE_FG, "1gp: ", WHITE_FG, "View recommended guesses within Possible words only")
         println(BOLD, LIGHT_BLUE_FG, "1v: ", WHITE_FG, "View filtered list of words")
         println(BOLD, LIGHT_BLUE_FG, "1av: ", WHITE_FG, "Automatic view of filtered list of words")
         println(BOLD, LIGHT_BLUE_FG, "1avoff: ", WHITE_FG, "Turn off automatic view")

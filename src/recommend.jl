@@ -67,3 +67,12 @@ function filter_guesses(possible::Vector{String}, correct::Set{Char}, wrong::Set
     sort!(guesses, by = x -> (score(x, wordcount, repeatcount, correct, wrong, locked, len)), rev = true)
     return guesses[1:number]
 end
+
+function filter_possibleguesses(possible::Vector{String}, correct::Set{Char}, wrong::Set{Char}, locked::Vector{Char}, number::Int=5)::Vector{String}
+    len = length(possible)
+    if len == 2 return possible end
+    guesses = deepcopy(possible)
+    wordcount, repeatcount = word_count(possible)
+    sort!(guesses, by = x -> (score(x, wordcount, repeatcount, correct, wrong, locked, len)), rev = true)
+    return guesses[1:number]
+end
