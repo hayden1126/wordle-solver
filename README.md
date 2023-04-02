@@ -1,15 +1,22 @@
-# Wordle Solver
+# Wordle Solver [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 Wordle Solver is a CLI-based program that assists solving the Wordle game on https://www.nytimes.com/games/wordle/index.html .
 - The program works by filtering words using your input and recommending you words to guess for more information.
 - The program is coded in Julia and tested for Julia v1.8.4 (should work for most other versions too)
 
+> Table of contents:
+>
+> - [Introduction](#introduction)
+> - [Installation](#installation)
+> - [Program Guide](#program-guide)
+> - [Features](#features)
+> - [Afterword](#afterword)
 
 ## Introduction
 
 Wordle is a game where you have to guess a 5-letter word. You have 6 tries and your tries will give you information on whether the actual word has the letters you guessed or not as well as positions of letters in the actual word. Wordle Solver helps you get the words that fit the information that the game has given you from your guesses.
 
 
-## Installation and Set-up
+## Installation
 
 1. Have the Julia programming language installed [here](https://julialang.org/downloads/), and make sure it is accessible by running `julia` in the command line.
 
@@ -101,3 +108,8 @@ Wordle is a game where you have to guess a 5-letter word. You have 6 tries and y
 
 Wordle Solver started out as a mini-project made in a weekend. Now, a lot more functions have been added. However, there are still improvements to be made, more updates coming soon!
 
+## License [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+All code in this repository is licensed under The MIT License (MIT)
+
+Copyright (c) 2023 Hayden Leung
