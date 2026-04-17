@@ -5,9 +5,7 @@ const WORDLENGTH = 5
 include("$FILEDIR/src/openURL.jl")
 include("$FILEDIR/src/recommend.jl")
 
-# Sets up tmp directory (unique per process for concurrent runs)
-TMPDIR = "$FILEDIR/tmp/$(getpid())"
-mkpath(TMPDIR)
+const Snapshot = Tuple{Vector{String}, Set{Char}, Set{Char}}
 
 mutable struct GameState
     possible::Vector{String}
@@ -16,7 +14,7 @@ mutable struct GameState
     locked::Vector{Vector{Char}}
     inputs::Vector{String}
     autoview::Bool
-    version::Int
+    history::Vector{Snapshot}
 end
 
 function GameState()
@@ -27,7 +25,7 @@ function GameState()
         [fill('_', WORDLENGTH)],
         Vector{String}(),
         false,
-        0
+        Vector{Snapshot}()
     )
 end
 
@@ -159,7 +157,7 @@ function check_commands(gs::GameState, input::String)::Bool
         gs.autoview = false
     elseif input == "1r" || input == "reset"
         gs.autoview = false
-        for _ in 1:gs.version-1 undo(gs) end
+        for _ in 1:length(gs.history)-1 undo(gs) end
         println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
         println(BOLD, LIGHT_BLUE_FG, "Word: ", GREEN_FG, join(gs.locked[end]))
@@ -263,45 +261,26 @@ function view_possible(wordlist::Vector{String}, mode::Bool=true)
     end
 end
 
-"""Function for saving the current input"""
+"""Function for saving the current state"""
 function save(gs::GameState)
-    mkdir("$TMPDIR/$(gs.version)")
-    open("$TMPDIR/$(gs.version)/possible.txt", "w") do io
-        for word in gs.possible println(io, word) end
-    end
-    open("$TMPDIR/$(gs.version)/correctLetters.txt", "w") do io
-        print(io, join(sort(collect(gs.correctletters))))
-    end
-    open("$TMPDIR/$(gs.version)/wrongLetters.txt", "w") do io
-        print(io, join(sort(collect(gs.wrongletters))))
-    end
-    gs.version += 1
+    push!(gs.history, (copy(gs.possible), copy(gs.correctletters), copy(gs.wrongletters)))
 end
 
 """Function for undoing the last input"""
 function undo(gs::GameState)
-    if gs.version == 1
+    if length(gs.history) <= 1
         println(BOLD, RED_FG, "No previous version available.")
         return
     end
-    gs.version -= 1
-
-    # Deletes newest saves
-    rm("$TMPDIR/$(gs.version)", recursive=true)
+    pop!(gs.history)
     pop!(gs.inputs)
     pop!(gs.locked)
 
-    # Loads previous saves
-    gs.possible = readlines("$TMPDIR/$(gs.version-1)/possible.txt")
-    gs.correctletters = Set(readline("$TMPDIR/$(gs.version-1)/correctLetters.txt"))
-    gs.wrongletters = Set(readline("$TMPDIR/$(gs.version-1)/wrongLetters.txt"))
+    # Restore previous snapshot
+    gs.possible, gs.correctletters, gs.wrongletters = gs.history[end]
+    gs.possible = copy(gs.possible)
+    gs.correctletters = copy(gs.correctletters)
+    gs.wrongletters = copy(gs.wrongletters)
 end
-
-function cleanup()
-    rm(TMPDIR, recursive=true)
-    # Remove parent tmp dir if empty
-    try rm("$FILEDIR/tmp") catch end
-end
-atexit(cleanup)
 
 main()
