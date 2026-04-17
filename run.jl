@@ -9,19 +9,32 @@ include("$FILEDIR/src/recommend.jl")
 TMPDIR = "$FILEDIR/tmp/$(getpid())"
 mkpath(TMPDIR)
 
-# Initialize global variables
-POSSIBLE = readlines("$FILEDIR/words/words_$(WORDLENGTH)ltr.txt")
-CORRECTLETTERS = Set{Char}()
-WRONGLETTERS = Set{Char}()
-LOCKED = [fill('_', WORDLENGTH)]
-INPUTS = Vector{String}()
-AUTOVIEW = false
-VERSION = 0
+mutable struct GameState
+    possible::Vector{String}
+    correctletters::Set{Char}
+    wrongletters::Set{Char}
+    locked::Vector{Vector{Char}}
+    inputs::Vector{String}
+    autoview::Bool
+    version::Int
+end
+
+function GameState()
+    GameState(
+        readlines("$FILEDIR/words/words_$(WORDLENGTH)ltr.txt"),
+        Set{Char}(),
+        Set{Char}(),
+        [fill('_', WORDLENGTH)],
+        Vector{String}(),
+        false,
+        0
+    )
+end
 
 """Main Function"""
 function main()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, AUTOVIEW, INPUTS, LOCKED
-    save()
+    gs = GameState()
+    save(gs)
 
     while true
         updateLOCKED = false
@@ -31,10 +44,10 @@ function main()
         input = lowercase(strip(readline()))
 
         # Check if input is command or invalid
-        if check_commands(input) || !check_input(input, "", false)
+        if check_commands(gs, input) || !check_input(gs, input, "", false)
             continue
         end
-        
+
         # Filter for general conditions
         if all(isletter, replace(input, "/" => ""))
             inputSplit = split(input, '/')
@@ -43,56 +56,56 @@ function main()
             if isequal(length(inputSplit), 1)
                 push!(inputSplit, "")
             end
-            if !check_input(String(inputSplit[1]), String(inputSplit[2]))
+            if !check_input(gs, String(inputSplit[1]), String(inputSplit[2]))
                 continue
             end
 
             # Update correctLetters, wrongLetters and possible
-            union!(CORRECTLETTERS, inputSplit[1])
-            union!(WRONGLETTERS, inputSplit[2])
+            union!(gs.correctletters, inputSplit[1])
+            union!(gs.wrongletters, inputSplit[2])
             correct, wrong = String(inputSplit[1]), String(inputSplit[2])
-            filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), POSSIBLE)
+            filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), gs.possible)
 
         # Filter for Specific conditions
         elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
             pos = parse(Int8, input[1])
             letters = collect(input[3:end])
-            if LOCKED[end][pos] != '_'
+            if gs.locked[end][pos] != '_'
                 println(BOLD, RED_FG, "Letter $pos has already been locked, try again.")
                 continue
             end
-            
+
             if isequal(input[2], 'y')
-                if check_contradict(string(input[3:end]), "") 
-                    continue 
+                if check_contradict(gs, string(input[3:end]), "")
+                    continue
                 end
                 updateLOCKED = true
-                filter!(word -> (word[pos] in letters), POSSIBLE)
-                union!(CORRECTLETTERS, input[3])
+                filter!(word -> (word[pos] in letters), gs.possible)
+                union!(gs.correctletters, input[3])
             else
-                filter!(word -> !(word[pos] in letters), POSSIBLE)
+                filter!(word -> !(word[pos] in letters), gs.possible)
             end
 
         # Filter for repeating letters
         elseif isletter(input[1]) && length(input) > 2 && all(isnumeric, input[3:end])
-            
+
             # Filter for GREEDY repeating letters
             if isequal(input[2], 'r')
-                if check_contradict(string(input[1]), "") 
-                    continue 
+                if check_contradict(gs, string(input[1]), "")
+                    continue
                 end
                 times = parse(Int8, input[3:end])
-                filter!(word -> count(==(input[1]), word) >= times, POSSIBLE)
-                union!(CORRECTLETTERS, input[1])
-        
+                filter!(word -> count(==(input[1]), word) >= times, gs.possible)
+                union!(gs.correctletters, input[1])
+
             # Filter for NON-GREEDY repeating letters
             elseif isequal(input[2], 'o')
-                if check_contradict(string(input[1]), "") 
-                    continue 
+                if check_contradict(gs, string(input[1]), "")
+                    continue
                 end
                 times = parse(Int8, input[3:end])
-                filter!(word -> count(==(input[1]), word) == times, POSSIBLE)
-                union!(CORRECTLETTERS, input[1])
+                filter!(word -> count(==(input[1]), word) == times, gs.possible)
+                union!(gs.correctletters, input[1])
             else
                 @goto invalidinput
             end
@@ -103,30 +116,29 @@ function main()
             println(BOLD, RED_FG, "Invalid input, try again.")
             continue
         end
-        
+
         # Save and undo if no possible
-        push!(LOCKED, copy(LOCKED[end]))
-        if updateLOCKED LOCKED[end][pos] = input[3] end
-        save()
-        push!(INPUTS, input)
-        len = length(POSSIBLE)
+        push!(gs.locked, copy(gs.locked[end]))
+        if updateLOCKED gs.locked[end][pos] = input[3] end
+        save(gs)
+        push!(gs.inputs, input)
+        len = length(gs.possible)
         if len == 0
             println(BOLD, RED_FG, "No possible words, try again.")
-            undo()
+            undo(gs)
             continue
         end
 
         # Automatic output of filtered list
-        if AUTOVIEW || len <= 10
-            view_possible(POSSIBLE)
+        if gs.autoview || len <= 10
+            view_possible(gs.possible)
         end
     end
 end
 
 """Function for checking if 'correct' and 'wrong' contradict previous inputs in 'correctLetters' and 'wrongLetters (return true if contradicts, false otherwise)"""
-function check_contradict(correct::String, wrong::String="")::Bool
-    global CORRECTLETTERS, WRONGLETTERS
-    if length(intersect(CORRECTLETTERS, wrong)) > 0 || length(intersect(WRONGLETTERS, correct)) > 0
+function check_contradict(gs::GameState, correct::String, wrong::String="")::Bool
+    if length(intersect(gs.correctletters, wrong)) > 0 || length(intersect(gs.wrongletters, correct)) > 0
         println(BOLD, RED_FG, "Input contradicts previous input, try again.")
         return true
     end
@@ -134,28 +146,27 @@ function check_contradict(correct::String, wrong::String="")::Bool
 end
 
 """Function for checking special inputs/commands (return true if input is a command, false otherwise)"""
-function check_commands(input::String)::Bool
-    global AUTOVIEW, VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTER, LOCKED
+function check_commands(gs::GameState, input::String)::Bool
     if input == "1e" || input == "exit"
         println(BOLD, MAGENTA_FG, "Program ended. \n")
         exit()
     elseif input == "1v"
-        view_possible(POSSIBLE)
+        view_possible(gs.possible)
     elseif input == "1av"
-        AUTOVIEW = true
-        view_possible(POSSIBLE)
+        gs.autoview = true
+        view_possible(gs.possible)
     elseif input == "1avoff"
-        AUTOVIEW = false
+        gs.autoview = false
     elseif input == "1r" || input == "reset"
-        AUTOVIEW = false
-        for _ in 1:VERSION-1 undo() end
+        gs.autoview = false
+        for _ in 1:gs.version-1 undo(gs) end
         println(BOLD, MAGENTA_FG, "Program reset.")
     elseif input == "1i"
-        println(BOLD, LIGHT_BLUE_FG, "Word: ", GREEN_FG, join(LOCKED[end]))
-        println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(CORRECTLETTERS)), ' '))
-        println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(WRONGLETTERS)), ' '))
+        println(BOLD, LIGHT_BLUE_FG, "Word: ", GREEN_FG, join(gs.locked[end]))
+        println(BOLD, LIGHT_BLUE_FG, "Letters in the word: ", GREEN_FG, join(sort(collect(gs.correctletters)), ' '))
+        println(BOLD, LIGHT_BLUE_FG, "Letters not in the word: ", DARK_GRAY_FG, join(sort(collect(gs.wrongletters)), ' '))
     elseif input == "1u"
-        undo()
+        undo(gs)
     elseif input == "1w"
         open_in_default_browser("https://www.nytimes.com/games/wordle/index.html")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle in your browser")
@@ -163,7 +174,7 @@ function check_commands(input::String)::Bool
         open_in_default_browser("https://wordleunlimited.org/")
         println(BOLD, LIGHT_BLUE_FG, "Launched Wordle Unlimited in your browser")
     elseif input == "1gp"
-        view_possible(filter_possibleguesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end]), false)
+        view_possible(filter_possibleguesses(gs.possible, gs.correctletters, gs.wrongletters, gs.locked[end]), false)
     elseif startswith(input, "1g")
         if length(input) > 3 && all(isnumeric, input[4:end])
             number = parse(Int, input[4:end])
@@ -177,7 +188,7 @@ function check_commands(input::String)::Bool
         else
             number = 5
         end
-        view_possible(filter_guesses(POSSIBLE, CORRECTLETTERS, WRONGLETTERS, LOCKED[end], number), false)
+        view_possible(filter_guesses(gs.possible, gs.correctletters, gs.wrongletters, gs.locked[end], number), false)
     elseif input == "1h" || input == "help" || input == "?"
         println(BOLD, LIGHT_BLUE_FG, "1e/exit: ", WHITE_FG, "End program")
         println(BOLD, LIGHT_BLUE_FG, "1g: ", WHITE_FG, "View recommended guesses within all words")
@@ -197,13 +208,12 @@ function check_commands(input::String)::Bool
 end
 
 """Function for checking validity of input (return true if passes check, false otherwise)"""
-function check_input(input1::String, input2::String, mode::Bool=true)::Bool
-    global INPUTS
+function check_input(gs::GameState, input1::String, input2::String, mode::Bool=true)::Bool
     # Check if empty inputs on both side of '/'
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
         return false
-    elseif (input1 in INPUTS && isempty(input2)) || (union(CORRECTLETTERS, input1) == CORRECTLETTERS && isempty(input2)) || (length(intersect(input2, WRONGLETTERS)) == length(input2) && isempty(input1))
+    elseif (input1 in gs.inputs && isempty(input2)) || (union(gs.correctletters, input1) == gs.correctletters && isempty(input2)) || (length(intersect(input2, gs.wrongletters)) == length(input2) && isempty(input1))
         println(BOLD, RED_FG, "Repeated input, try again.")
         return false
     elseif count(x -> x == '/', input1) > 1 || count(x -> x == '/', input2) > 1
@@ -218,7 +228,7 @@ function check_input(input1::String, input2::String, mode::Bool=true)::Bool
 
         # Check if any letters contradict previous inputs
         if mode
-            return !check_contradict(input1, input2)
+            return !check_contradict(gs, input1, input2)
         end
     end
     return true
@@ -254,39 +264,37 @@ function view_possible(wordlist::Vector{String}, mode::Bool=true)
 end
 
 """Function for saving the current input"""
-function save()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
-    mkdir("$TMPDIR/$VERSION")
-    open("$TMPDIR/$VERSION/possible.txt", "w") do io
-        for word in POSSIBLE println(io, word) end
+function save(gs::GameState)
+    mkdir("$TMPDIR/$(gs.version)")
+    open("$TMPDIR/$(gs.version)/possible.txt", "w") do io
+        for word in gs.possible println(io, word) end
     end
-    open("$TMPDIR/$VERSION/correctLetters.txt", "w") do io
-        print(io, join(sort(collect(CORRECTLETTERS))))
+    open("$TMPDIR/$(gs.version)/correctLetters.txt", "w") do io
+        print(io, join(sort(collect(gs.correctletters))))
     end
-    open("$TMPDIR/$VERSION/wrongLetters.txt", "w") do io
-        print(io, join(sort(collect(WRONGLETTERS))))
+    open("$TMPDIR/$(gs.version)/wrongLetters.txt", "w") do io
+        print(io, join(sort(collect(gs.wrongletters))))
     end
-    VERSION += 1
+    gs.version += 1
 end
 
 """Function for undoing the last input"""
-function undo()
-    global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS, INPUTS, LOCKED
-    if VERSION == 1
+function undo(gs::GameState)
+    if gs.version == 1
         println(BOLD, RED_FG, "No previous version available.")
         return
     end
-    VERSION -= 1
+    gs.version -= 1
 
     # Deletes newest saves
-    rm("$TMPDIR/$VERSION", recursive=true)
-    pop!(INPUTS)
-    pop!(LOCKED)
+    rm("$TMPDIR/$(gs.version)", recursive=true)
+    pop!(gs.inputs)
+    pop!(gs.locked)
 
     # Loads previous saves
-    POSSIBLE = readlines("$TMPDIR/$(VERSION-1)/possible.txt")
-    CORRECTLETTERS = Set(readline("$TMPDIR/$(VERSION-1)/correctLetters.txt"))
-    WRONGLETTERS = Set(readline("$TMPDIR/$(VERSION-1)/wrongLetters.txt"))
+    gs.possible = readlines("$TMPDIR/$(gs.version-1)/possible.txt")
+    gs.correctletters = Set(readline("$TMPDIR/$(gs.version-1)/correctLetters.txt"))
+    gs.wrongletters = Set(readline("$TMPDIR/$(gs.version-1)/wrongLetters.txt"))
 end
 
 function cleanup()
