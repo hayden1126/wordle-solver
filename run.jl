@@ -95,7 +95,7 @@ end
 function apply_filter!(gs::GameState, input::String)
     if all(isletter, replace(input, "/" => ""))
         return filter_general!(gs, input)
-    elseif isdigit(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
+    elseif isdigit(input[1]) && parse(Int, input[1]) >= 1 && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
         return filter_position!(gs, input)
     elseif isletter(input[1]) && length(input) > 2 && all(isdigit, input[3:end])
         return filter_repeat!(gs, input)
@@ -116,7 +116,7 @@ function main()
         input = lowercase(strip(readline()))
 
         # Check if input is command or invalid
-        if check_commands(gs, input) || !check_input(gs, input, "", false)
+        if check_commands(gs, input) || !check_input_basic(gs, input)
             continue
         end
 
@@ -217,9 +217,20 @@ function check_commands(gs::GameState, input::String)::Bool
     return true
 end
 
-"""Function for checking validity of input (return true if passes check, false otherwise)"""
-function check_input(gs::GameState, input1::String, input2::String, mode::Bool=true)::Bool
-    # Check if empty inputs on both side of '/'
+"""Check basic validity of input without checking against previous state"""
+function check_input_basic(gs::GameState, input::String)::Bool
+    if isempty(input)
+        println(BOLD, RED_FG, "Empty input, try again.")
+        return false
+    elseif (input in gs.inputs) || (union(gs.correctletters, input) == gs.correctletters)
+        println(BOLD, RED_FG, "Repeated input, try again.")
+        return false
+    end
+    return true
+end
+
+"""Check full validity of split input including contradiction checks against previous state"""
+function check_input(gs::GameState, input1::String, input2::String)::Bool
     if isempty(input1) && isempty(input2)
         println(BOLD, RED_FG, "Empty input, try again.")
         return false
@@ -229,19 +240,11 @@ function check_input(gs::GameState, input1::String, input2::String, mode::Bool=t
     elseif count(x -> x == '/', input1) > 1 || count(x -> x == '/', input2) > 1
         println(BOLD, RED_FG, "Invalid input, try again.")
         return false
-    else
-        # Check for repeated letters on both sides of '/'
-        if length(intersect(input1, input2)) != 0
-            println(BOLD, RED_FG, "Contradiction in input, try again.")
-            return false
-        end
-
-        # Check if any letters contradict previous inputs
-        if mode
-            return !check_contradict(gs, input1, input2)
-        end
+    elseif length(intersect(input1, input2)) != 0
+        println(BOLD, RED_FG, "Contradiction in input, try again.")
+        return false
     end
-    return true
+    return !check_contradict(gs, input1, input2)
 end
 
 """Function for outputing the Filtered list"""
