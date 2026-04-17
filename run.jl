@@ -95,9 +95,9 @@ end
 function apply_filter!(gs::GameState, input::String)
     if all(isletter, replace(input, "/" => ""))
         return filter_general!(gs, input)
-    elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
+    elseif isdigit(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
         return filter_position!(gs, input)
-    elseif isletter(input[1]) && length(input) > 2 && all(isnumeric, input[3:end])
+    elseif isletter(input[1]) && length(input) > 2 && all(isdigit, input[3:end])
         return filter_repeat!(gs, input)
     else
         println(BOLD, RED_FG, "Invalid input, try again.")
@@ -186,7 +186,7 @@ function check_commands(gs::GameState, input::String)::Bool
     elseif input == "1gp"
         view_possible(rank_guesses(gs.possible, gs.correctletters, gs.wrongletters, gs.locked[end]; candidates=gs.possible), false)
     elseif startswith(input, "1g")
-        if length(input) > 3 && all(isnumeric, input[4:end])
+        if length(input) > 3 && all(isdigit, input[4:end])
             number = parse(Int, input[4:end])
             if number > 60
                 println(BOLD, RED_FG, "Number too large, set to 60.")
