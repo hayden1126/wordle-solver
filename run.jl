@@ -250,20 +250,21 @@ function view_possible(wordlist::Vector{String}, mode::Bool=true)
     if len > 120
         println(BOLD, LIGHT_BLUE_FG, "Too many possible words, input more conditions.")
     elseif len > 0
-        message = ""
         height = min(displaysize(stdout)[1] - 6, 20, len)
         columns = Int16(ceil(len / height))
         space = min(6, (-5 + displaysize(stdout)[2] ÷ columns))
         if space < 1
             println(BOLD, LIGHT_BLUE_FG, "Too many possible words and not enough space to output, input more conditions.")
         else
+            buf = IOBuffer()
             for i in 1:height
-                message *= "|   "
+                print(buf, "|   ")
                 for j in i:height:len
-                    message *= (wordlist[j] * " "^space)
+                    print(buf, wordlist[j], " "^space)
                 end
-                message *= "\n"
+                print(buf, "\n")
             end
+            message = String(take!(buf))
             if mode
                 print(LIGHT_GREEN_FG, "o$("-"^(displaysize(stdout)[2]-2))o" * "\n| Possible word(s): $len\n|\n" * message * "|   \n")
             else
