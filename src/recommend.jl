@@ -3,8 +3,8 @@ sigmoid(z::Real) = 1.0 / (1.0 + exp(-z))
 # Count the number of words that contain a letter and the number of times a letter appears in a word
 function word_count(possible::Vector{String})::Tuple{Dict{Char, Int}, Dict{Char, Int}}
     # Dictionary for storing the number of words that contain a letter
-    wordcount = Dict{Char, Int}('a' => 0, 'b' => 0, 'c' => 0, 'd' => 0, 'e' => 0, 'f' => 0, 'g' => 0, 'h' => 0, 'i' => 0, 'j' => 0, 'k' => 0, 'l' => 0, 'm' => 0, 'n' => 0, 'o' => 0, 'p' => 0, 'q' => 0, 'r' => 0, 's' => 0, 't' => 0, 'u' => 0, 'v' => 0, 'w' => 0, 'x' => 0, 'y' => 0, 'z' => 0)
-    repeatcount = Dict{Char, Int}('a' => 0, 'b' => 0, 'c' => 0, 'd' => 0, 'e' => 0, 'f' => 0, 'g' => 0, 'h' => 0, 'i' => 0, 'j' => 0, 'k' => 0, 'l' => 0, 'm' => 0, 'n' => 0, 'o' => 0, 'p' => 0, 'q' => 0, 'r' => 0, 's' => 0, 't' => 0, 'u' => 0, 'v' => 0, 'w' => 0, 'x' => 0, 'y' => 0, 'z' => 0)
+    wordcount = Dict{Char, Int}(c => 0 for c in 'a':'z')
+    repeatcount = Dict{Char, Int}(c => 0 for c in 'a':'z')
     for word in possible
         for letter in Set(word)
             wordcount[letter] += 1
