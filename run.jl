@@ -29,14 +29,88 @@ function GameState()
     )
 end
 
+"""Filter by general letter conditions (e.g. 'aei/st'). Returns (false, 0) on success, nothing on failure."""
+function filter_general!(gs::GameState, input::String)
+    inputSplit = split(input, '/')
+
+    if isequal(length(inputSplit), 1)
+        push!(inputSplit, "")
+    end
+    if !check_input(gs, String(inputSplit[1]), String(inputSplit[2]))
+        return nothing
+    end
+
+    union!(gs.correctletters, inputSplit[1])
+    union!(gs.wrongletters, inputSplit[2])
+    correct, wrong = String(inputSplit[1]), String(inputSplit[2])
+    filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), gs.possible)
+    return (false, Int8(0))
+end
+
+"""Filter by position-specific conditions (e.g. '3ya', '2nb'). Returns (updateLOCKED, pos) on success, nothing on failure."""
+function filter_position!(gs::GameState, input::String)
+    pos = parse(Int8, input[1])
+    letters = collect(input[3:end])
+    if gs.locked[end][pos] != '_'
+        println(BOLD, RED_FG, "Letter $pos has already been locked, try again.")
+        return nothing
+    end
+
+    if isequal(input[2], 'y')
+        if check_contradict(gs, string(input[3:end]), "")
+            return nothing
+        end
+        filter!(word -> (word[pos] in letters), gs.possible)
+        union!(gs.correctletters, input[3])
+        return (true, pos)
+    else
+        filter!(word -> !(word[pos] in letters), gs.possible)
+        return (false, pos)
+    end
+end
+
+"""Filter by repeating letter conditions (e.g. 'ar2', 'eo3'). Returns (false, 0) on success, nothing on failure."""
+function filter_repeat!(gs::GameState, input::String)
+    if isequal(input[2], 'r')
+        if check_contradict(gs, string(input[1]), "")
+            return nothing
+        end
+        times = parse(Int8, input[3:end])
+        filter!(word -> count(==(input[1]), word) >= times, gs.possible)
+        union!(gs.correctletters, input[1])
+    elseif isequal(input[2], 'o')
+        if check_contradict(gs, string(input[1]), "")
+            return nothing
+        end
+        times = parse(Int8, input[3:end])
+        filter!(word -> count(==(input[1]), word) == times, gs.possible)
+        union!(gs.correctletters, input[1])
+    else
+        return nothing
+    end
+    return (false, Int8(0))
+end
+
+"""Dispatch input to the appropriate filter. Returns (updateLOCKED, pos) on success, nothing on failure."""
+function apply_filter!(gs::GameState, input::String)
+    if all(isletter, replace(input, "/" => ""))
+        return filter_general!(gs, input)
+    elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
+        return filter_position!(gs, input)
+    elseif isletter(input[1]) && length(input) > 2 && all(isnumeric, input[3:end])
+        return filter_repeat!(gs, input)
+    else
+        println(BOLD, RED_FG, "Invalid input, try again.")
+        return nothing
+    end
+end
+
 """Main Function"""
 function main()
     gs = GameState()
     save(gs)
 
     while true
-        updateLOCKED = false
-
         # Get input
         print(LIGHT_BLUE_FG, "o" * "-"^(displaysize(stdout)[2] - 2) * "o\n| ", BOLD, WHITE_FG, "input: ")
         input = lowercase(strip(readline()))
@@ -46,74 +120,12 @@ function main()
             continue
         end
 
-        # Filter for general conditions
-        if all(isletter, replace(input, "/" => ""))
-            inputSplit = split(input, '/')
-
-            # Checks input validity
-            if isequal(length(inputSplit), 1)
-                push!(inputSplit, "")
-            end
-            if !check_input(gs, String(inputSplit[1]), String(inputSplit[2]))
-                continue
-            end
-
-            # Update correctLetters, wrongLetters and possible
-            union!(gs.correctletters, inputSplit[1])
-            union!(gs.wrongletters, inputSplit[2])
-            correct, wrong = String(inputSplit[1]), String(inputSplit[2])
-            filter!(word -> all(letter -> (letter in word), correct) && !any(letter -> (letter in word), wrong), gs.possible)
-
-        # Filter for Specific conditions
-        elseif isnumeric(input[1]) && parse(Int, input[1]) <= WORDLENGTH && ((isequal(length(input), 3) && isequal(input[2], 'y')) || (length(input) > 2 && isequal(input[2], 'n'))) && all(isletter, input[3:end])
-            pos = parse(Int8, input[1])
-            letters = collect(input[3:end])
-            if gs.locked[end][pos] != '_'
-                println(BOLD, RED_FG, "Letter $pos has already been locked, try again.")
-                continue
-            end
-
-            if isequal(input[2], 'y')
-                if check_contradict(gs, string(input[3:end]), "")
-                    continue
-                end
-                updateLOCKED = true
-                filter!(word -> (word[pos] in letters), gs.possible)
-                union!(gs.correctletters, input[3])
-            else
-                filter!(word -> !(word[pos] in letters), gs.possible)
-            end
-
-        # Filter for repeating letters
-        elseif isletter(input[1]) && length(input) > 2 && all(isnumeric, input[3:end])
-
-            # Filter for GREEDY repeating letters
-            if isequal(input[2], 'r')
-                if check_contradict(gs, string(input[1]), "")
-                    continue
-                end
-                times = parse(Int8, input[3:end])
-                filter!(word -> count(==(input[1]), word) >= times, gs.possible)
-                union!(gs.correctletters, input[1])
-
-            # Filter for NON-GREEDY repeating letters
-            elseif isequal(input[2], 'o')
-                if check_contradict(gs, string(input[1]), "")
-                    continue
-                end
-                times = parse(Int8, input[3:end])
-                filter!(word -> count(==(input[1]), word) == times, gs.possible)
-                union!(gs.correctletters, input[1])
-            else
-                @goto invalidinput
-            end
-
-        # For invalid inputs
-        else
-            @label invalidinput
-            println(BOLD, RED_FG, "Invalid input, try again.")
+        # Apply the appropriate filter
+        result = apply_filter!(gs, input)
+        if isnothing(result)
             continue
         end
+        updateLOCKED, pos = result
 
         # Save and undo if no possible
         push!(gs.locked, copy(gs.locked[end]))
