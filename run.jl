@@ -5,11 +5,9 @@ const WORDLENGTH = 5
 include("$FILEDIR/src/openURL.jl")
 include("$FILEDIR/src/recommend.jl")
 
-# Sets up tmp directory
-if isdir("$FILEDIR/tmp")
-    rm("$FILEDIR/tmp", recursive=true)
-end
-mkdir("$FILEDIR/tmp")
+# Sets up tmp directory (unique per process for concurrent runs)
+TMPDIR = "$FILEDIR/tmp/$(getpid())"
+mkpath(TMPDIR)
 
 # Initialize global variables
 POSSIBLE = readlines("$FILEDIR/words/words_$(WORDLENGTH)ltr.txt")
@@ -258,14 +256,14 @@ end
 """Function for saving the current input"""
 function save()
     global VERSION, POSSIBLE, CORRECTLETTERS, WRONGLETTERS
-    mkdir("$FILEDIR/tmp/$VERSION")
-    open("$FILEDIR/tmp/$VERSION/possible.txt", "w") do io
+    mkdir("$TMPDIR/$VERSION")
+    open("$TMPDIR/$VERSION/possible.txt", "w") do io
         for word in POSSIBLE println(io, word) end
     end
-    open("$FILEDIR/tmp/$VERSION/correctLetters.txt", "w") do io
+    open("$TMPDIR/$VERSION/correctLetters.txt", "w") do io
         print(io, join(sort(collect(CORRECTLETTERS))))
     end
-    open("$FILEDIR/tmp/$VERSION/wrongLetters.txt", "w") do io
+    open("$TMPDIR/$VERSION/wrongLetters.txt", "w") do io
         print(io, join(sort(collect(WRONGLETTERS))))
     end
     VERSION += 1
@@ -281,18 +279,20 @@ function undo()
     VERSION -= 1
 
     # Deletes newest saves
-    rm("$FILEDIR/tmp/$VERSION", recursive=true)
+    rm("$TMPDIR/$VERSION", recursive=true)
     pop!(INPUTS)
     pop!(LOCKED)
 
     # Loads previous saves
-    POSSIBLE = readlines("$FILEDIR/tmp/$(VERSION-1)/possible.txt")
-    CORRECTLETTERS = Set(readline("$FILEDIR/tmp/$(VERSION-1)/correctLetters.txt"))
-    WRONGLETTERS = Set(readline("$FILEDIR/tmp/$(VERSION-1)/wrongLetters.txt"))
+    POSSIBLE = readlines("$TMPDIR/$(VERSION-1)/possible.txt")
+    CORRECTLETTERS = Set(readline("$TMPDIR/$(VERSION-1)/correctLetters.txt"))
+    WRONGLETTERS = Set(readline("$TMPDIR/$(VERSION-1)/wrongLetters.txt"))
 end
 
 function cleanup()
-    rm("$FILEDIR/tmp", recursive=true)
+    rm(TMPDIR, recursive=true)
+    # Remove parent tmp dir if empty
+    try rm("$FILEDIR/tmp") catch end
 end
 atexit(cleanup)
 
